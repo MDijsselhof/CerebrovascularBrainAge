@@ -21,6 +21,11 @@ Settings.TestInTraining = 0; % Boolean. If testing also using part of training d
 Settings.TestFraction = 0; % Set testing fraction to preferred number. Only if TestInTraining is True, otherwise will be ignored
 Settings.ValidationFraction = 0.2; % Set validation fraction to preferred number. 
 
+% Subjects to be removed
+% provide string of subject ID's
+Settings.RemoveTrainingSubjectsList = ["sub-59080_1", "sub-59094_1", "sub-59096_1", "sub-59108_1", "sub-59120_1", "sub-59120_2", "sub-59135_1", "sub-59158_1","sub-59176_1", "sub-59226_2", "sub-59265_1", "sub-59265_2", "sub-59407_1", "sub-59419_1"];
+Settings.RemoveTestingSubjectsList = [];
+
 %% Admin
 % Data paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Settings.Paths.TrainingSetPath = fullfile(Settings.DataFolder,'Training/');
@@ -38,17 +43,11 @@ if ~exist(Settings.Paths.TestingSetPath,'dir') == 7
     mkdir(Settings.Paths.TestingSetPath)
 end
 
-%% Subjects to be removed
-% provide string of subject ID's
-
-Settings.RemoveTrainingSubjectsList = ["sub-59080_1", "sub-59094_1", "sub-59096_1", "sub-59108_1", "sub-59120_1", "sub-59120_2", "sub-59135_1", "sub-59158_1","sub-59176_1", "sub-59226_2", "sub-59265_1", "sub-59265_2", "sub-59407_1", "sub-59419_1"];
-Settings.RemoveTestingSubjectsList = [];
-disp('Subjects to be removed added')
-
 %% Data structure creation
 
 [TrainingDataSetPath, ValidationDataPath, TestingDataSetPath] = xASL_CBA_ConfigureData(Settings);
 disp('Data structure created')
+
 %% Feature selection
 
 [TrainingFeatureSetsFolder, TrainingFeatureSetsNames] = xASL_CBA_SelectFeatureData(TrainingDataSetPath, Settings, 1);
