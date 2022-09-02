@@ -28,14 +28,22 @@ Settings.Paths.ValidationSetPath = fullfile(Settings.DataFolder,'Validation/');
 Settings.Paths.TestingSetPath = fullfile(Settings.DataFolder,'Testing/');
 Settings.Paths.MLPath = fullfile(Settings.DataFolder,'ML/');
 
+if ~exist(Settings.Paths.TrainingSetPath,'dir') == 7
+    mkdir(Settings.Paths.TrainingSetPath)
+end
+if ~exist(Settings.Paths.ValidationSetPath,'dir') == 7
+    mkdir(Settings.Paths.ValidationSetPath)
+end
+if ~exist(Settings.Paths.TestingSetPath,'dir') == 7
+    mkdir(Settings.Paths.TestingSetPath)
+end
+
 %% Subjects to be removed
 % provide string of subject ID's
 
 Settings.RemoveTrainingSubjectsList = ["sub-59080_1", "sub-59094_1", "sub-59096_1", "sub-59108_1", "sub-59120_1", "sub-59120_2", "sub-59135_1", "sub-59158_1","sub-59176_1", "sub-59226_2", "sub-59265_1", "sub-59265_2", "sub-59407_1", "sub-59419_1"];
 Settings.RemoveTestingSubjectsList = [];
 disp('Subjects to be removed added')
-
-%% Admin
 
 %% Data structure creation
 
