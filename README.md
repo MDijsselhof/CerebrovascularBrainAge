@@ -19,7 +19,7 @@ This folder consists of the following sub folders:
 
 - Training : Datasets used for training the model
 - Validation : Datasets used for validating the model (can be constructed from the training dataset)
-- Testing : : Datasets used for testing the model/ predicting age (can be constructed from the training dataset)
+- Testing : Datasets used for testing the model/ predicting age (can be constructed from the training dataset)
 
 All datasets require output of ExploreASL format (.csv) and an Age_sex.csv file containing the subject name, age and sex (1 for male, 0 for female)
 
