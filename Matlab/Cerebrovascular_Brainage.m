@@ -7,10 +7,10 @@
 addpath('/scratch/mdijsselhof/ExploreASL/') % add ExploreASL path to working directory
 ExploreASL_Initialize
 
-addpath('/scratch/mdijsselhof/Brain_Age/Matlab') % add Cerebrovascular Brain-age path to working directory
+addpath('/scratch/mdijsselhof/Cerebrovascular-Brain-age/Matlab') % add Cerebrovascular Brain-age path to working directory
 %% Settings
-Settings.DataFolder = "/scratch/mdijsselhof/Brain_Age/Data/"; %% Add studyfolder
-Settings.PythonEnvironment = "/scratch/mdijsselhof/Brain_Age/Python/CBA/"; % Python3 environment used for ML 
+Settings.DataFolder = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/"; %% Add studyfolder
+Settings.PythonEnvironment = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Python/CBA/"; % Python3 environment used for ML 
 Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options are: ["All", RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
 % "LinearReg", "SVR", "Lasso", "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", 
 % "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"]
@@ -21,6 +21,7 @@ Settings.TestInTraining = 0; % Boolean. If testing also using part of training d
 Settings.TestFraction = 0; % Set testing fraction to preferred number. Only if TestInTraining is True, otherwise will be ignored
 Settings.ValidationFraction = 0.2; % Set validation fraction to preferred number. 
 
+%% Admin
 % Data paths %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Settings.Paths.TrainingSetPath = fullfile(Settings.DataFolder,'Training/');
 Settings.Paths.ValidationSetPath = fullfile(Settings.DataFolder,'Validation/');
