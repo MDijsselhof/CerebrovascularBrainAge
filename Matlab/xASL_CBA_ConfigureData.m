@@ -21,16 +21,21 @@ end
 %% Load data
 
 % get training data paths and load data
-TrainingData = LoadInputData(TrainingSetList, Settings.Paths.TrainingSetPath, Settings.CBFAtlasType); % load Testing datasets
+[TrainingData, TrainingDataPaths] = LoadInputData(TrainingSetList, Settings.Paths.TrainingSetPath, Settings.CBFAtlasType); % load Training datasets
 
 % get testing data paths and load data if available
 if isempty(TestingSetList)
     disp('Testing data folder empty, assuming testing will be done in training set')
     TestInTraining = 1;
 else
-    TestingData = LoadInputData(TestingSetList, Settings.Paths.TestingSetPath, Settings.CBFAtlasType); % load Testing datasets
+    [TestingData, TestingDataPaths] = LoadInputData(TestingSetList, Settings.Paths.TestingSetPath, Settings.CBFAtlasType); % load Testing datasets
 end
-    
+
+%% Extract correct subject data
+% If size of the datasets differs within training/validation/testing, extract subjects from Age_Sex.csv for further use
+TrainingData = xASL_CBA_ExtractSubjects(Settings, TrainingData, TrainingDataPaths);
+TestingData = xASL_CBA_ExtractSubjects(Settings, TestingData, TestingDataPaths);
+
 %% Merge data
 % merge all datasets for training and testing, constructs features
 % also removes selected subjects

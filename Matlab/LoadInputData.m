@@ -1,4 +1,4 @@
-function DataSets = LoadInputData(DataSetList, DataSetlocation, CBFAtlasType)
+function [DataSets, SelectedImagingDataList] = LoadInputData(DataSetList, DataSetlocation, CBFAtlasType)
 % this function reads a list of Datasets that are to be read for later conversion to ML datasets
 NDataSets = numel(DataSetList); % amount of datasets to be read
 

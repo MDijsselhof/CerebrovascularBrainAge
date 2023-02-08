@@ -70,7 +70,7 @@ for nDataset = 1 : NDataSets
     % remove NaN subjects
     [NaNlocRow, NanLocColumn] = find(contains(DataSetASL(:,:),'n/a'));
     UniqueNanLocRow = unique(NaNlocRow);
-    RemovedSubjectList(:,nDataset) = MLnDataSet(UniqueNanLocRow,1);
+    RemovedSubjectList(1:size(MLnDataSet(UniqueNanLocRow,1),1),nDataset) = MLnDataSet(UniqueNanLocRow,1);
     % get subject name for list
     MLnDataSet(UniqueNanLocRow,:) = [];
     

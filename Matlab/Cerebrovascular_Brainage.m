@@ -14,7 +14,7 @@ Settings.PythonEnvironment = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Pyt
 Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options are: ["All", RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
 % "LinearReg", "SVR", "Lasso", "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", 
 % "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"]
-Settings.CBFAtlasType = ["GM","CortVascTerritoriesTatu","DeepWM"]; % Select Atlas used for feature creation. Options are:["TotalGM","DeepWM","ATTbasedFlowTerritories","CortVascTerritoriesTatu","Desikan_Killiany_MNI_SPM12","Hammers",H0cort_CONN"]
+Settings.CBFAtlasType = ["GM","Tatu_ACA_MCA_PCA","DeepWM"]; % Select Atlas used for feature creation. Options are:["TotalGM","DeepWM","ATTbasedFlowTerritories","Tatu_ACA_MCA_PCA","Desikan_Killiany_MNI_SPM12","Hammers",H0cort_CONN"]
 Settings.FeatureType = ["All"]; % Select feature types. Options are: ["All", "T1w", "FLAIR", "ASL", "T1w+FLAIR", "T1w+ASL", "FLAIR+ASL", "T1w+FLAIR+ASL"]
 Settings.HemisphereType = ["Both"]; % Use ExploreASL values for both hemispheres ["Both"] or single ["Single"]
 Settings.TestInTraining = 0; % Boolean. If testing also using part of training data, set to 1;
@@ -45,13 +45,13 @@ end
 
 %% Data structure creation
 
-[TrainingDataSetPath, ValidationDataPath, TestingDataSetPath] = xASL_CBA_ConfigureData(Settings);
+[TrainingDataSetPath, ValidationDataSetPath, TestingDataSetPath] = xASL_CBA_ConfigureData(Settings);
 disp('Data structure created')
 
 %% Feature selection
 
 [TrainingFeatureSetsFolder, TrainingFeatureSetsNames] = xASL_CBA_SelectFeatureData(TrainingDataSetPath, Settings, 1);
-[ValidationFeatureSetsFolder, ValidationFeatureSetsNames] = xASL_CBA_SelectFeatureData(ValidationDataPath, Settings, 2);
+[ValidationFeatureSetsFolder, ValidationFeatureSetsNames] = xASL_CBA_SelectFeatureData(ValidationDataSetPath, Settings, 2);
 [TestingFeatureSetsFolder,TestingFeatureSetsNames] = xASL_CBA_SelectFeatureData(TestingDataSetPath, Settings, 3);
 
 %% Python ML
