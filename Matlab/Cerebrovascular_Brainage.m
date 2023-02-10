@@ -31,6 +31,7 @@ Settings.RemoveTestingSubjectsList = [];
 Settings.Paths.TrainingSetPath = fullfile(Settings.DataFolder,'Training/');
 Settings.Paths.ValidationSetPath = fullfile(Settings.DataFolder,'Validation/');
 Settings.Paths.TestingSetPath = fullfile(Settings.DataFolder,'Testing/');
+Settings.Paths.ResultsPath = fullfile(Settings.DataFolder,'Results/');
 Settings.Paths.MLPath = fullfile(Settings.DataFolder,'ML/');
 
 if ~exist(Settings.Paths.TrainingSetPath,'dir') == 7
@@ -42,6 +43,15 @@ end
 if ~exist(Settings.Paths.TestingSetPath,'dir') == 7
     mkdir(Settings.Paths.TestingSetPath)
 end
+
+if ~exist(Settings.Paths.ResultsPath,'dir') == 7
+    mkdir(Settings.Paths.ResultsPath)
+end
+
+Settings.Paths.Results.CBA_validation = fullfile(Settings.Paths.ResultsPath,'CBA_estimation_validation.csv');
+Settings.Paths.Results.CBA_test = fullfile(Settings.Paths.ResultsPath ,'CBA_estimation_test.csv');
+Settings.Paths.Results.CBA_test_cor = fullfile(Settings.Paths.ResultsPath,'CBA_estimation_test_cor.csv');
+
 
 %% Data structure creation
 
@@ -61,4 +71,6 @@ xASL_CBA_ML(TrainingFeatureSetsFolder, ValidationFeatureSetsFolder, TestingFeatu
 
 %% Prediction output
 
-
+xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_validation)
+xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_test)
+xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_test_cor)
