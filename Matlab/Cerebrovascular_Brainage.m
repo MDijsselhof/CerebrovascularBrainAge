@@ -23,7 +23,7 @@ Settings.ValidationFraction = 0.2; % Set validation fraction to preferred number
 
 % Subjects to be removed
 % provide string of subject ID's
-Settings.RemoveTrainingSubjectsList = ["sub-59080_1", "sub-59094_1", "sub-59096_1", "sub-59108_1", "sub-59120_1", "sub-59120_2", "sub-59135_1", "sub-59158_1","sub-59176_1", "sub-59226_2", "sub-59265_1", "sub-59265_2", "sub-59407_1", "sub-59419_1"];
+Settings.RemoveTrainingSubjectsList = [];
 Settings.RemoveTestingSubjectsList = [];
 
 %% Admin

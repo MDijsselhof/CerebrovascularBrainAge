@@ -43,7 +43,9 @@ TestingData = xASL_CBA_ExtractSubjects(Settings, TestingData, TestingDataPaths);
 NTrainingSets = numel(TrainingData); % amount of training datasets
 [MLTrainingData, RemovedSubjectListTraining]= xASL_CBA_CreateMLdataset(TrainingData, NTrainingSets, Settings.HemisphereType, Settings.RemoveTrainingSubjectsList);
 % save removed subjects
+if ~isempty(Settings.RemoveTrainingSubjectsList) == 1
 RemovedSubjectListTraining(1:size(Settings.RemoveTrainingSubjectsList,2),end+1) = cellstr(Settings.RemoveTrainingSubjectsList)';
+end
 xASL_tsvWrite(RemovedSubjectListTraining, char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataRemovedSubjects.tsv')),1,0);
 
 % get testing data paths and load data if available
