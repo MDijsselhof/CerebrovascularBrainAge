@@ -8,16 +8,19 @@
 
 #%% JUST FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-TrainingDataDir = '/home/mdijsselhof/scratch/Brain_Age/Data/Training/' # test script: 
-TestingDataDir = '/home/mdijsselhof/scratch/Brain_Age/Data/Testing/'  # test script: 
-ResultsDataDir = '/home/mdijsselhof/scratch/Brain_Age/Data/Results/' # test script: 
-ValidationDataDir = '/home/mdijsselhof/scratch/Brain_Age/Data/Validation/' # test script:   
-    
-FeatureSetsList = ['T1wFLAIRASL']
-AlgorithmsList = ['ExtraTrees']
+#TrainingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Training/' # test script: 
+#TestingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Testing/'  # test script: 
+#ResultsDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Results/' # test script: 
+#ValidationDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Validation/' # test script:   
+#FeatureSetsList = 'CBF,CBFCoV,CoV,FLAIR,FLAIRCBF,FLAIRCBFCoV,FLAIRCoV,T1w,T1wCBF,T1wCBFCoV,T1wCoV,T1wFLAIR,T1wFLAIRCBF,T1wFLAIRCBFCoV,T1wFLAIRCoV'
+#AlgorithmsList =  'RandomForest,DecisionTree,XGBoost,BayesianRidge,LinearReg,SVR,Lasso,GPR,ElasticNetCV,ExtraTrees,GradBoost,AdaBoost,KNN,LassoLarsCV,LinearSVR,RidgeCV,SGDReg,Ridge,LassoLars,ElasticNet,RVM,RVR'
+#FeatureSetsList = FeatureSetsList.split(',') 
+#AlgorithmsList = AlgorithmsList.split(',') 
+
 #%% Load modules
 # essentials
 import argparse
+import os
 import numpy as np
 import torch
 import pandas as pd
@@ -53,8 +56,8 @@ parser.add_argument("--TrainingDataDir", help="Path to training data folder cont
 parser.add_argument("--ValidationDataDir", help="Path to training data folder containing constructed feature sets",type=str)
 parser.add_argument("--TestingDataDir", help="Path to testing data folder containing constructed feature sets",type=str)
 parser.add_argument("--ResultsDataDir", help="Path to results data folder containing future predictions",type=str)
-parser.add_argument("--FeatureSetsList", nargs='+', help="List of feature sets used for machine learning")
-parser.add_argument("--AlgorithmsList", nargs='+', help="List of algorithms used for machine learning")
+parser.add_argument("--FeatureSetsList", help="List of feature sets used for machine learning")
+parser.add_argument("--AlgorithmsList", help="List of algorithms used for machine learning")
 
 #%% DataPaths
 TrainingDataDir = parser.parse_args().TrainingDataDir # test script: 
@@ -68,21 +71,11 @@ TestingFeatureSetDataDir = TestingDataDir + 'FeatureSets/' # test script:
 
 # feature set list
 FeatureSetsList = parser.parse_args().FeatureSetsList 
-print(FeatureSetsList)
-SelectedFeatureSetsList = {}
-FeatureSets = {'T1w': 'T1w', 
-               'FLAIR': 'FLAIR', 
-               'ASL': 'ASL', 
-               'T1wFLAIR': 'T1wFLAIR', 
-               'T1wASL': 'T1wASL', 
-               'FLAIRASL': 'FLAIRASL', 
-               'T1wFLAIRASL': 'T1wFLAIRASL'}
-
-for SelectedFeatureName in FeatureSetsList:
-    SelectedFeatureSetsList[SelectedFeatureName] = FeatureSets.get(SelectedFeatureName) # get algorithms and build new dictonary
+FeatureSetsList = FeatureSetsList.split(',') 
 
 # algorithm list
-AlgorithmsList = parser.parse_args().AlgorithmsList 
+AlgorithmsList = parser.parse_args().AlgorithmsList
+AlgorithmsList = AlgorithmsList.split(',') 
 SelectedAlgorithmsList = {}
 print(AlgorithmsList)
 Algorithms = {'RandomForest': RandomForestRegressor,
@@ -154,9 +147,9 @@ def evaluation_metrics(y_test, y_pred):
     return mae, rmse, R2, exp_var
 
 # cerebrovascular brain-age prediction
-def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results_val, Results_test, Results_test_cor, SelectedFeatureSetsList, SelectedAlgorithmsList):
+def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results_val, Results_test, Results_test_cor, FeatureSetsList, SelectedAlgorithmsList):
     # select feature set
-    for FeatureSet, FeatureSetName in tqdm(SelectedFeatureSetsList.items(),desc='Feature set'):
+    for FeatureSetName in tqdm(FeatureSetsList):
         
         # create dataframe for saving predicted and chronological brain ages
         PredictedAgeDF_val = pd.DataFrame(columns=(AlgorithmsList))
@@ -166,20 +159,32 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
         # load training and testing data for feature set
         TrainingSetPath = TrainingFeatureSetDataDir + 'TrainingSet_' + FeatureSetName + '.tsv' 
         ValidationSetPath = ValidationFeatureSetDataDir + 'ValidationSet_' + FeatureSetName + '.tsv' 
+        if os.path.isfile(ValidationSetPath) == 1:
+            ValidationSetExists = 1
+        else:
+            ValidationSetExists = 0
+            
+        
         TestingSetPath = TestingFeatureSetDataDir + 'TestingSet_' + FeatureSetName + '.tsv'
 
         TrainingSet = pd.read_csv(TrainingSetPath,engine='python', sep='\t')
-        ValidationSet = pd.read_csv(ValidationSetPath,engine='python', sep='\t')
+        if ValidationSetExists == 1:
+            ValidationSet = pd.read_csv(ValidationSetPath,engine='python', sep='\t')
+            
         TestingSet = pd.read_csv(TestingSetPath,engine='python', sep='\t')
 
-        X_train, y_train = TrainingSet.drop(['SUBJECT', 'ID', 'Age', 'Sex'], axis=1), TrainingSet['Age']
-        X_val, y_val = ValidationSet.drop(['SUBJECT', 'ID', 'Age', 'Sex'], axis=1), ValidationSet['Age']
-        X_test, y_test = TestingSet.drop(['SUBJECT', 'ID', 'Age', 'Sex'], axis=1), TestingSet['Age']
+        X_train, y_train = TrainingSet.drop(['participant_id', 'ID', 'Age', 'Sex'], axis=1), TrainingSet['Age']
+        if ValidationSetExists == 1:
+            X_val, y_val = ValidationSet.drop(['participant_id', 'ID', 'Age', 'Sex'], axis=1), ValidationSet['Age']
+            
+        X_test, y_test = TestingSet.drop(['participant_id', 'ID', 'Age', 'Sex'], axis=1), TestingSet['Age']
         
         # perform standard scaling
         SC = StandardScaler()
         X_train_SC = SC.fit_transform(X_train)
-        X_val_SC = SC.transform(X_val)
+        if ValidationSetExists == 1:
+            X_val_SC = SC.transform(X_val)
+            
         X_test_SC = SC.transform(X_test)
         
         # select algorithm
@@ -195,33 +200,34 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
             Algorithm_instantiated.fit(X_train_SC, y_train)
             
             # validation set
-            y_val_pred = Algorithm_instantiated.predict(X_val_SC)
-            mae_val, rmse_val, R2_val, exp_var_val = evaluation_metrics(y_val, y_val_pred)
+            if ValidationSetExists == 1:
+                y_val_pred = Algorithm_instantiated.predict(X_val_SC)
+                mae_val, rmse_val, R2_val, exp_var_val = evaluation_metrics(y_val, y_val_pred)
             
-            Results_val['Feature_combo'].append(FeatureSetName)
-            Results_val['No. features'].append(len(FeatureSet))
-            Results_val['Algorithm'].append(AlgorithmName)
-            Results_val['mae'].append(mae_val)
-            Results_val['rmse'].append(rmse_val)
-            Results_val['R2'].append(R2_val)
-            Results_val['explained_var'].append(exp_var_val)
+                Results_val['Feature_combo'].append(FeatureSetName)
+                Results_val['No. features'].append(len(FeatureSetName))
+                Results_val['Algorithm'].append(AlgorithmName)
+                Results_val['mae'].append(mae_val)
+                Results_val['rmse'].append(rmse_val)
+                Results_val['R2'].append(R2_val)
+                Results_val['explained_var'].append(exp_var_val)
             
-            PredictedAgeDF_val[AlgorithmName] = y_val_pred
+                PredictedAgeDF_val[AlgorithmName] = y_val_pred
             
-            # determine age bias 
-            Age_delta = y_val_pred - y_val
-            #Age_delta_r = Age_delta.values.reshape(-1, 1)
-            y_val_r = y_val.values.reshape(-1,1)
-            LinearReg = LinearRegression().fit(y_val_r,Age_delta)
-            RegCoef = LinearReg.coef_
-            RegIntercept = LinearReg.intercept_
+                # determine age bias 
+                Age_delta = y_val_pred - y_val
+                #Age_delta_r = Age_delta.values.reshape(-1, 1)
+                y_val_r = y_val.values.reshape(-1,1)
+                LinearReg = LinearRegression().fit(y_val_r,Age_delta)
+                RegCoef = LinearReg.coef_
+                RegIntercept = LinearReg.intercept_
             
             # test set
             y_pred_test = Algorithm_instantiated.predict(X_test_SC)
             mae_test, rmse_test, R2_test, exp_var_test = evaluation_metrics(y_test, y_pred_test)
             
             Results_test['Feature_combo'].append(FeatureSetName)
-            Results_test['No. features'].append(len(FeatureSet))
+            Results_test['No. features'].append(len(X_test.columns))
             Results_test['Algorithm'].append(AlgorithmName)
             Results_test['mae'].append(mae_test)
             Results_test['rmse'].append(rmse_test)
@@ -230,47 +236,55 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
             
             PredictedAgeDF_test[AlgorithmName] = y_pred_test
             
-            # test  corrected set
-            y_pred_test_cor = y_pred_test - (RegCoef * y_test + RegIntercept)
+            if ValidationSetExists == 1:
+               # test  corrected set
+               y_pred_test_cor = y_pred_test - (RegCoef * y_test + RegIntercept)
             
-            mae_test_cor, rmse_test_cor, R2_test_cor, exp_var_test_cor = evaluation_metrics(y_test, y_pred_test_cor)
+               mae_test_cor, rmse_test_cor, R2_test_cor, exp_var_test_cor = evaluation_metrics(y_test, y_pred_test_cor)
             
-            Results_test_cor['Feature_combo'].append(FeatureSetName)
-            Results_test_cor['No. features'].append(len(FeatureSet))
-            Results_test_cor['Algorithm'].append(AlgorithmName)
-            Results_test_cor['mae'].append(mae_test_cor)
-            Results_test_cor['rmse'].append(rmse_test_cor)
-            Results_test_cor['R2'].append(R2_test_cor)
-            Results_test_cor['explained_var'].append(exp_var_test_cor)
-            
-            PredictedAgeDF_test_cor[AlgorithmName] = y_pred_test_cor
+               Results_test_cor['Feature_combo'].append(FeatureSetName)
+               Results_test_cor['No. features'].append(len(FeatureSetName))
+               Results_test_cor['Algorithm'].append(AlgorithmName)
+               Results_test_cor['mae'].append(mae_test_cor)
+               Results_test_cor['rmse'].append(rmse_test_cor)
+               Results_test_cor['R2'].append(R2_test_cor)
+               Results_test_cor['explained_var'].append(exp_var_test_cor)
+        
+               PredictedAgeDF_test_cor[AlgorithmName] = y_pred_test_cor
             
          
         # save predicted ages 
-        PredictedAgeDF_val['Chronological_Age'] = y_val
+        
         PredictedAgeDF_test['Chronological_Age'] = y_test
-        PredictedAgeDF_test_cor['Chronological_Age'] = y_test
+        if ValidationSetExists == 1:
+            PredictedAgeDF_val['Chronological_Age'] = y_val
+            PredictedAgeDF_test_cor['Chronological_Age'] = y_test
         
-        ValFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_val.csv' # path for saving predicted ages
         TestFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test.csv' # path for saving predicted ages
-        TestCorFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_cor.csv' # path for saving predicted ages
-        
-        PredictedAgeDF_val.to_csv(ValFeatureSetPredictedAgePath, index=False)
         PredictedAgeDF_test.to_csv(TestFeatureSetPredictedAgePath, index=False)
-        PredictedAgeDF_test_cor.to_csv(TestCorFeatureSetPredictedAgePath, index=False)
+        ResultsDF_test = pd.DataFrame.from_dict(Results_test,orient='index')
+        ResultsDF_test_final = ResultsDF_test.transpose() 
         
-    ResultsDF_val = pd.DataFrame.from_dict(Results_val,orient='index')
-    ResultsDF_test = pd.DataFrame.from_dict(Results_test,orient='index')
-    ResultsDF_test_cor = pd.DataFrame.from_dict(Results_test_cor,orient='index')
-    ResultsDF_val_final = ResultsDF_val.transpose()
-    ResultsDF_test_final = ResultsDF_test.transpose() 
-    ResultsDF_test_cor_final = ResultsDF_test_cor.transpose()
-    
-    return ResultsDF_val_final, ResultsDF_test_final, ResultsDF_test_cor_final
+        if ValidationSetExists == 1:
+            ValFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_val.csv' # path for saving predicted ages
+            TestCorFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_cor.csv' # path for saving predicted ages
+            PredictedAgeDF_val.to_csv(ValFeatureSetPredictedAgePath, index=False)
+            PredictedAgeDF_test_cor.to_csv(TestCorFeatureSetPredictedAgePath, index=False)
+        
+            ResultsDF_val = pd.DataFrame.from_dict(Results_val,orient='index')
+            ResultsDF_test_cor = pd.DataFrame.from_dict(Results_test_cor,orient='index')
+            ResultsDF_val_final = ResultsDF_val.transpose()
+            ResultsDF_test_cor_final = ResultsDF_test_cor.transpose()
+        else:
+            ResultsDF_val_final = []
+            ResultsDF_test_cor_final = []
+            
+    return ResultsDF_val_final, ResultsDF_test_final, ResultsDF_test_cor_final, ValidationSetExists
 #%% Perform machine learning
-results_val, results_test, results_test_cor = CBA_prediction(TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results_val, Results_test, Results_test_cor, SelectedFeatureSetsList, SelectedAlgorithmsList)
+results_val, results_test, results_test_cor, ValidationSetExists = CBA_prediction(TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results_val, Results_test, Results_test_cor, FeatureSetsList, SelectedAlgorithmsList)
     
 # save data to results dir
-results_val.to_csv(ResultsDataDir + 'CBA_estimation_validation.csv')
 results_test.to_csv(ResultsDataDir + 'CBA_estimation_test.csv')
-results_test_cor.to_csv(ResultsDataDir + 'CBA_estimation_test_cor.csv')
+if ValidationSetExists == 1:
+    results_val.to_csv(ResultsDataDir + 'CBA_estimation_validation.csv')
+    results_test_cor.to_csv(ResultsDataDir + 'CBA_estimation_test_cor.csv')

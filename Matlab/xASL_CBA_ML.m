@@ -1,11 +1,13 @@
-function MLoutput = xASL_CBA_ML(TrainingSetPath, ValidationSetPath, TestingSetPath, Settings)
+function MLoutput = xASL_CBA_ML(TrainingSetPath, ValidationSetPath, TestingSetPath, Settings, SelectedFeaturesList)
 %% Brain Age Prediction
 % This wrapper loads ML configured datasets, calls Python for brain age predictions, and stores output
 
 % admin
 MLscriptPath = char(fullfile(Settings.PythonEnvironment,'MachineLearning.py')); % Python3 ML script
 FeatureSetsTrainingList = xASL_adm_GetFileList(TrainingSetPath,'^.+$','List',[],false); % get feature sets
+if ~isempty(ValidationSetPath)
 FeatureSetsValidationList = xASL_adm_GetFileList(ValidationSetPath,'^.+$','List',[],false); % get feature sets
+end
 FeatureSetsTestingList = xASL_adm_GetFileList(TestingSetPath,'^.+$','List',[],false); % get feature sets
 
 % create results directory
@@ -31,7 +33,7 @@ for nMLAlgorithm = 1 : NMLAlgorithms
     if nMLAlgorithm == 1
         MLAlgorithmsList = MLAlgorithmName;
     else
-        MLAlgorithmsList = [MLAlgorithmsList ' ' MLAlgorithmName];
+        MLAlgorithmsList = [MLAlgorithmsList ',' MLAlgorithmName];
     end
 end
 % create feature set list
@@ -43,7 +45,7 @@ for nFeatureSet = 1 : NFeatureSets
     if nFeatureSet == 1
         FeatureSetsList = FeatureSetName;
     else
-        FeatureSetsList = [FeatureSetsList ' ' FeatureSetName];
+        FeatureSetsList = [FeatureSetsList ',' FeatureSetName];
     end
 end
 

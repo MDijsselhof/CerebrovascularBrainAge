@@ -10,16 +10,16 @@ ExploreASL_Initialize
 addpath('/scratch/mdijsselhof/Cerebrovascular-Brain-age/Matlab') % add Cerebrovascular Brain-age path to working directory
 %% Settings
 Settings.DataFolder = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/"; %% Add studyfolder
-Settings.PythonEnvironment = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Python/CBA/"; % Python3 environment used for ML 
-Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options are: ["All", RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
+Settings.PythonEnvironment = "/scratch/mdijsselhof/Cerebrovascular-Brain-age/Python/Scripts"; % Python3 environment used for ML 
+Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options are: ["All", "RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
 % "LinearReg", "SVR", "Lasso", "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", 
 % "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"]
 Settings.CBFAtlasType = ["GM","Tatu_ACA_MCA_PCA","DeepWM"]; % Select Atlas used for feature creation. Options are:["TotalGM","DeepWM","ATTbasedFlowTerritories","Tatu_ACA_MCA_PCA","Desikan_Killiany_MNI_SPM12","Hammers",H0cort_CONN"]
-Settings.FeatureType = ["All"]; % Select feature types. Options are: ["All", "T1w", "FLAIR", "ASL", "T1w+FLAIR", "T1w+ASL", "FLAIR+ASL", "T1w+FLAIR+ASL"]
+Settings.FeatureType = ["T1w","FLAIR","CBF","CoV"]; % Select feature types. Options are: ["T1w", "FLAIR", "CBF", "CoV", "ATT", "Tex", or all combinations in format ["T1W",FLAIR"]]. 
 Settings.HemisphereType = ["Both"]; % Use ExploreASL values for both hemispheres ["Both"] or single ["Single"]
-Settings.TestInTraining = 0; % Boolean. If testing also using part of training data, set to 1;
-Settings.TestFraction = 0; % Set testing fraction to preferred number. Only if TestInTraining is True, otherwise will be ignored
-Settings.ValidationFraction = 0.2; % Set validation fraction to preferred number. 
+Settings.TestInTraining = 1; % Boolean. If testing also using part of training data, set to 1;
+Settings.TestFraction = 0.2; % Set testing fraction to preferred number. Only if TestInTraining is True, otherwise will be ignored
+Settings.ValidationFraction = 0; % Set validation fraction to preferred number. 
 
 % Subjects to be removed
 % provide string of subject ID's
@@ -60,15 +60,18 @@ disp('Data structure created')
 
 %% Feature selection
 
-[TrainingFeatureSetsFolder, TrainingFeatureSetsNames] = xASL_CBA_SelectFeatureData(TrainingDataSetPath, Settings, 1);
+[TrainingFeatureSetsFolder, TrainingFeatureSetsNames,SelectedFeaturesList] = xASL_CBA_SelectFeatureData(TrainingDataSetPath, Settings, 1);
+if Settings.ValidationFraction > 0
 [ValidationFeatureSetsFolder, ValidationFeatureSetsNames] = xASL_CBA_SelectFeatureData(ValidationDataSetPath, Settings, 2);
+end
 [TestingFeatureSetsFolder,TestingFeatureSetsNames] = xASL_CBA_SelectFeatureData(TestingDataSetPath, Settings, 3);
 
 %% Python ML
-TrainingFeatureSetsNamesString = string(TrainingFeatureSetsNames);
-TestingFeatureSetsNamesString = string(TestingFeatureSetsNames);
-xASL_CBA_ML(TrainingFeatureSetsFolder, ValidationFeatureSetsFolder, TestingFeatureSetsFolder, Settings);
-
+if Settings.ValidationFraction > 0
+xASL_CBA_ML(TrainingFeatureSetsFolder, ValidationFeatureSetsFolder, TestingFeatureSetsFolder, Settings, SelectedFeaturesList);
+else
+xASL_CBA_ML(TrainingFeatureSetsFolder, [], TestingFeatureSetsFolder, Settings, SelectedFeaturesList);
+end
 %% Prediction output
 
 xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_validation)

@@ -11,8 +11,8 @@ NTestingSets = numel(TestingSetList);
 
 % Algorithms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if contains(Settings.MLAlgorithms,"All") == 1
-     MLAlgorithmsList = ["RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", "LinearReg", "SVR", "Lasso", "GPR", "Naive_median", "Naive_mean", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"];
-     NML_algorithmsList = numel(MLAlgorithmsList);
+    MLAlgorithmsList = ["RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", "LinearReg", "SVR", "Lasso", "GPR", "Naive_median", "Naive_mean", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"];
+    NML_algorithmsList = numel(MLAlgorithmsList);
 else
     MLAlgorithmsList = Settings.MLAlgorithms;
     NML_algorithmsList = numel(MLAlgorithmsList);
@@ -34,7 +34,9 @@ end
 %% Extract correct subject data
 % If size of the datasets differs within training/validation/testing, extract subjects from Age_Sex.csv for further use
 TrainingData = xASL_CBA_ExtractSubjects(Settings, TrainingData, TrainingDataPaths);
-TestingData = xASL_CBA_ExtractSubjects(Settings, TestingData, TestingDataPaths);
+if ~TestInTraining
+    TestingData = xASL_CBA_ExtractSubjects(Settings, TestingData, TestingDataPaths);
+end
 
 %% Merge data
 % merge all datasets for training and testing, constructs features
@@ -44,9 +46,10 @@ NTrainingSets = numel(TrainingData); % amount of training datasets
 [MLTrainingData, RemovedSubjectListTraining]= xASL_CBA_CreateMLdataset(TrainingData, NTrainingSets, Settings.HemisphereType, Settings.RemoveTrainingSubjectsList);
 % save removed subjects
 if ~isempty(Settings.RemoveTrainingSubjectsList) == 1
-RemovedSubjectListTraining(1:size(Settings.RemoveTrainingSubjectsList,2),end+1) = cellstr(Settings.RemoveTrainingSubjectsList)';
+    RemovedSubjectListTraining(1:size(Settings.RemoveTrainingSubjectsList,2),end+1) = cellstr(Settings.RemoveTrainingSubjectsList)';
+    xASL_tsvWrite(RemovedSubjectListTraining, char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataRemovedSubjects.tsv')),1,0);
 end
-xASL_tsvWrite(RemovedSubjectListTraining, char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataRemovedSubjects.tsv')),1,0);
+
 
 % get testing data paths and load data if available
 if ~Settings.TestInTraining == 1
@@ -54,8 +57,8 @@ if ~Settings.TestInTraining == 1
     [MLTestingData, RemovedSubjectListTesting] = xASL_CBA_CreateMLdataset(TestingData, NTestingSets, Settings.HemisphereType, Settings.RemoveTestingSubjectsList);
     % save removed subjects
     if ~isempty(Settings.RemoveTestingSubjectsList) == 1
-    RemovedSubjectListTesting(1:size(Settings.RemoveTestingSubjectsList,2),end+1) = cellstr(Settings.RemoveTestingSubjectsList)';
-    xASL_tsvWrite(RemovedSubjectListTesting, char(fullfile(Settings.Paths.TestingSetPath,'TestingDataRemovedSubjects.tsv')),1,0);
+        RemovedSubjectListTesting(1:size(Settings.RemoveTestingSubjectsList,2),end+1) = cellstr(Settings.RemoveTestingSubjectsList)';
+        xASL_tsvWrite(RemovedSubjectListTesting, char(fullfile(Settings.Paths.TestingSetPath,'TestingDataRemovedSubjects.tsv')),1,0);
     end
 end
 
@@ -63,12 +66,12 @@ end
 % save data for use in ML
 % Training data is either divided into training and validation, or divided into training and testing based the TestInTraining boolean
 
-    TrainingDataPath = char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataComplete.tsv'));
-    ValidationDataPath = char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataComplete.tsv'));
-    TestingDataPath = char(fullfile(Settings.Paths.TestingSetPath,'TestingDataComplete.tsv'));
-        
-if ~Settings.TestInTraining == 1
+TrainingDataPath = char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataComplete.tsv'));
+ValidationDataPath = char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataComplete.tsv'));
+TestingDataPath = char(fullfile(Settings.Paths.TestingSetPath,'TestingDataComplete.tsv'));
 
+if ~Settings.TestInTraining == 1
+    
     
     MLTrainingDataNoHeader = MLTrainingData(2:end,:);
     MLTrainingDataShuffled = MLTrainingData(1,:);
@@ -79,7 +82,7 @@ if ~Settings.TestInTraining == 1
     MLTrainingDataShuffledTraining = MLTrainingDataShuffled(1:NTraining+1,:);
     MLTrainingDataShuffledValidation = MLTrainingDataShuffled(1,:);
     MLTrainingDataShuffledValidation(2:NValidation+2,:) = MLTrainingDataShuffled(NTraining+1:end,:);
- 
+    
     xASL_tsvWrite(MLTrainingDataShuffledTraining,TrainingDataPath,1,0);
     xASL_tsvWrite(MLTrainingDataShuffledValidation,ValidationDataPath,1,0);
     disp(['Training data shuffeld into ' num2str(Settings.ValidationFraction) ' validation partition and ' num2str((1-Settings.ValidationFraction)) ' training partition, and saved'])
@@ -96,7 +99,7 @@ else % training data is randomly sorted to training or testing based on partitio
     MLTrainingDataShuffledTraining = MLTrainingDataShuffled(1:NTraining+1,:);
     MLTrainingDataShuffledTesting = MLTrainingDataShuffled(1,:);
     MLTrainingDataShuffledTesting(2:NTesting+2,:) = MLTrainingDataShuffled(NTraining+1:end,:);
- 
+    
     xASL_tsvWrite(MLTrainingDataShuffledTraining,TrainingDataPath,1,0);
     xASL_tsvWrite(MLTrainingDataShuffledTesting,TestingDataPath,1,0);
     disp(['Training data shuffeld into ' num2str(Settings.TestFraction) ' testing partition and ' num2str((1-Settings.TestFraction)) ' training partition, and saved'])

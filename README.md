@@ -12,6 +12,19 @@ Cerebrovascular Brain-age estimation requires three folders:
 - Data
 - Matlab
 - Python
+	- Packages:
+		- argparse
+		- os
+		- numpy 
+		- torch
+		- pandas 
+		- scipy 
+		- tqdm 
+		- time
+		- sklearn
+		- xgboost
+		- sklearn_rvm 
+		- skrvm 
 
 #### Data
 
