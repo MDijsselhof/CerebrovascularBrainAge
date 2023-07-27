@@ -15,7 +15,7 @@ Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options a
 % "LinearReg", "SVR", "Lasso", "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", 
 % "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"]
 Settings.CBFAtlasType = ["GM","Tatu_ACA_MCA_PCA","DeepWM"]; % Select Atlas used for feature creation. Options are:["TotalGM","DeepWM","ATTbasedFlowTerritories","Tatu_ACA_MCA_PCA","Desikan_Killiany_MNI_SPM12","Hammers",H0cort_CONN"]
-Settings.FeatureType = ["T1w","FLAIR","CBF","CoV"]; % Select feature types. Options are: ["T1w", "FLAIR", "CBF", "CoV", "ATT", "Tex", or all combinations in format ["T1W",FLAIR"]]. 
+Settings.FeatureType = ["T1w","CBF","ATT", "Tex"]; % Select feature types. Options are: ["T1w", "FLAIR", "CBF", "CoV", "ATT", "Tex", or all combinations in format ["T1W",FLAIR"]]. 
 Settings.HemisphereType = ["Both"]; % Use ExploreASL values for both hemispheres ["Both"] or single ["Single"]
 Settings.TestInTraining = 1; % Boolean. If testing also using part of training data, set to 1;
 Settings.TestFraction = 0.2; % Set testing fraction to preferred number. Only if TestInTraining is True, otherwise will be ignored
@@ -74,6 +74,10 @@ xASL_CBA_ML(TrainingFeatureSetsFolder, [], TestingFeatureSetsFolder, Settings, S
 end
 %% Prediction output
 
-xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_validation)
+if ~Settings.ValidationFraction == 1
 xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_test)
+else
+xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_test)
+xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_validation)
 xASL_CBA_ShowResults(Settings, Settings.Paths.Results.CBA_test_cor)
+end

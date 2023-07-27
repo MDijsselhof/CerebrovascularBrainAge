@@ -8,14 +8,14 @@
 
 #%% JUST FOR TESTING !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-#TrainingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Training/' # test script: 
-#TestingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Testing/'  # test script: 
-#ResultsDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Results/' # test script: 
-#ValidationDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Validation/' # test script:   
-#FeatureSetsList = 'CBF,CBFCoV,CoV,FLAIR,FLAIRCBF,FLAIRCBFCoV,FLAIRCoV,T1w,T1wCBF,T1wCBFCoV,T1wCoV,T1wFLAIR,T1wFLAIRCBF,T1wFLAIRCBFCoV,T1wFLAIRCoV'
-#AlgorithmsList =  'RandomForest,DecisionTree,XGBoost,BayesianRidge,LinearReg,SVR,Lasso,GPR,ElasticNetCV,ExtraTrees,GradBoost,AdaBoost,KNN,LassoLarsCV,LinearSVR,RidgeCV,SGDReg,Ridge,LassoLars,ElasticNet,RVM,RVR'
-#FeatureSetsList = FeatureSetsList.split(',') 
-#AlgorithmsList = AlgorithmsList.split(',') 
+TrainingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Training/' # test script: 
+TestingDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Testing/'  # test script: 
+ResultsDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/Results/' # test script: 
+ValidationDataDir = '/scratch/mdijsselhof/Cerebrovascular-Brain-age/Validation/' # test script:   
+FeatureSetsList =         'ATT,ATTTex,CBF,CBFATT,CBFATTTex,CBFTex,FLAIR,FLAIRATT,FLAIRATTTex,FLAIRCBF,FLAIRCBFATT,FLAIRCBFATTTex,FLAIRCBFTex,FLAIRTex,T1w,T1wATT,T1wATTTex,T1wCBF,T1wCBFATT,T1wCBFATTTex,T1wCBFTex,T1wFLAIR,T1wFLAIRATT,T1wFLAIRATTTex,T1wFLAIRCBF,T1wFLAIRCBFATT,T1wFLAIRCBFATTTex,T1wFLAIRCBFTex,T1wFLAIRTex,T1wTex,Tex'
+AlgorithmsList =  'RandomForest,DecisionTree,XGBoost,BayesianRidge,LinearReg,SVR,Lasso,GPR,ElasticNetCV,ExtraTrees,GradBoost,AdaBoost,KNN,LassoLarsCV,LinearSVR,RidgeCV,SGDReg,Ridge,LassoLars,ElasticNet,RVM,RVR'
+FeatureSetsList = FeatureSetsList.split(',') 
+AlgorithmsList = AlgorithmsList.split(',') 
 
 #%% Load modules
 # essentials
@@ -77,7 +77,6 @@ FeatureSetsList = FeatureSetsList.split(',')
 AlgorithmsList = parser.parse_args().AlgorithmsList
 AlgorithmsList = AlgorithmsList.split(',') 
 SelectedAlgorithmsList = {}
-print(AlgorithmsList)
 Algorithms = {'RandomForest': RandomForestRegressor,
                   'DecisionTree': DecisionTreeRegressor,
                   'XGBoost': XGBRegressor,
@@ -178,7 +177,6 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
             X_val, y_val = ValidationSet.drop(['participant_id', 'ID', 'Age', 'Sex'], axis=1), ValidationSet['Age']
             
         X_test, y_test = TestingSet.drop(['participant_id', 'ID', 'Age', 'Sex'], axis=1), TestingSet['Age']
-        
         # perform standard scaling
         SC = StandardScaler()
         X_train_SC = SC.fit_transform(X_train)
@@ -189,7 +187,6 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
         
         # select algorithm
         for AlgorithmName, Algorithm in tqdm(SelectedAlgorithmsList.items(),desc='Algorithms',leave=False):
-                       
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
                 kwargs = {}

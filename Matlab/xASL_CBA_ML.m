@@ -49,10 +49,10 @@ for nFeatureSet = 1 : NFeatureSets
     end
 end
 
-% Call Python environment
+disp(['Features selected are : ' FeatureSetsList]);
+disp(['Algorithms selected are : ' MLAlgorithmsList]);
 
 % Call Machine Learning script with provided input
-
 PythonCommand = ['python3 ' MLscriptPath ' --TrainingDataDir ' char(Settings.Paths.TrainingSetPath) ' --ValidationDataDir ' char(Settings.Paths.ValidationSetPath) ' --TestingDataDir ' char(Settings.Paths.TestingSetPath) ' --ResultsDataDir ' char(Settings.Paths.ResultsPath) ' --FeatureSetsList ' FeatureSetsList ' --AlgorithmsList '  MLAlgorithmsList ];
 xASL_system(PythonCommand,1)
 

@@ -21,10 +21,12 @@ if sum(UniqueSizesDatasets) > size(InputData,1) % if sum is larger, then more th
                     SubjectName = SubjectDataSet(nSubject,1);
                     SubjectList = InputData{iDataSet,1}{NImageDataSet,1}(:,1); % list of subject names
                     SubjectLoc = find(contains(SubjectList,SubjectName)); % find subject location in image data set
-                    ExtractedData{iDataSet,1}{NImageDataSet,:}(nSubject,:) = InputData{iDataSet,1}{NImageDataSet,:}(SubjectLoc,:); % copy subject to new cell array
-                    
+                    if size(SubjectLoc,1) == 1
+                        ExtractedData{iDataSet,1}{NImageDataSet,:}(nSubject,:) = InputData{iDataSet,1}{NImageDataSet,:}(SubjectLoc,:); % copy subject to new cell array
+                    else
+                        ExtractedData{iDataSet,1}{NImageDataSet,:}(nSubject,:) = InputData{iDataSet,1}{NImageDataSet,:}(SubjectLoc(1),:); % copy first of duplicate subject to new cell array
+                    end
                 end
-                
             end
         end
         ExtractedData{iDataSet,1}{SizeImageDatasets,:} = SubjectDataSet; % copy Age_Sex.csv to new ExtractedData set
