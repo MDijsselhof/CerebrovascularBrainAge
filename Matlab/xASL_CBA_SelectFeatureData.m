@@ -1,69 +1,63 @@
-function [FeatureSetsFolder, FinalFeatureSets, SelectedFeaturesFinal] = xASL_CBA_SelectFeatureData(DatasetPath, Settings, TrainValTest)
+function [Settings] = xASL_CBA_SelectFeatureData(Settings, TrainValTest)
 % this function selects feature data from the large data structure,
-% and prints new training and testing data containing only selected features
+% and prints new training, validation and testing data containing only selected features
 % TrainingBoolean = 1; Set dataset to save in Training or Testing Folder
 % admin
 SelectedFeatureSet = Settings.FeatureType;
 
 if TrainValTest == 1 % training folder
-    FeatureSetsFolder = char(fullfile(Settings.Paths.TrainingSetPath,'FeatureSets'));
-    FeatureSetsSavePath = char(fullfile(FeatureSetsFolder,'TrainingSet_'));
+    DatasetPath = Settings.TrainingDataPath;
+    Settings.FeatureSetsFolder = char(fullfile(Settings.Paths.TrainingSetPath,'FeatureSets'));
+    FeatureSetsSavePath = char(fullfile(Settings.FeatureSetsFolder,'TrainingSet_'));
 elseif TrainValTest == 2 % validation folder
-    FeatureSetsFolder = char(fullfile(Settings.Paths.ValidationSetPath,'FeatureSets'));
-    FeatureSetsSavePath = char(fullfile(FeatureSetsFolder,'ValidationSet_'));
+    DatasetPath = Settings.ValidationDataPath;
+    Settings.FeatureSetsFolder = char(fullfile(Settings.Paths.ValidationSetPath,'FeatureSets'));
+    FeatureSetsSavePath = char(fullfile(Settings.FeatureSetsFolder,'ValidationSet_'));
 else % testing folder
-    FeatureSetsFolder = char(fullfile(Settings.Paths.TestingSetPath,'FeatureSets'));
-    FeatureSetsSavePath = char(fullfile(FeatureSetsFolder,'TestingSet_'));
+    DatasetPath = Settings.TestingDataPath;
+    Settings.FeatureSetsFolder = char(fullfile(Settings.Paths.TestingSetPath,'FeatureSets'));
+    FeatureSetsSavePath = char(fullfile(Settings.FeatureSetsFolder,'TestingSet_'));
 end
 
-if  exist(FeatureSetsFolder) == 7
+if  exist(Settings.FeatureSetsFolder) == 7
     disp('Feature sets folder already present');
 else
-    mkdir(FeatureSetsFolder)
+    mkdir(Settings.FeatureSetsFolder)
 end
 
-% !! add new features here if necessary !!
-FeatureSets.T1w = ["GM_vol","WM_vol","CSF_vol","GM_ICVRatio","GMWM_ICVRatio"];
-FeatureSets.FLAIR = ["WMHvol_WMvol", "WMH_count"];
-FeatureSets.CBF = ["CBF"];
-FeatureSets.CoV = ["CoV"];
-FeatureSets.ASL = ["CBF", "CoV"];
-FeatureSets.ATT = ["ATT"];
-FeatureSets.Tex = ["Tex"];
-% !! add new features here if necessary !!
 
 % build all features
-FinalFeatureSets = FeatureConstruction(FeatureSets);
+Settings.FinalFeatureSets = FeatureConstruction(Settings.FeatureSets);
 
 for iSelectedFeature = 1 : numel(SelectedFeatureSet)
     FeatureSetNameCombinations = combnk(SelectedFeatureSet,iSelectedFeature); % combinations of feature names
     if isequal(iSelectedFeature,1)
-        SelectedFeaturesFinal(1:size(FeatureSetNameCombinations,1),1) = FeatureSetNameCombinations;
+        Settings.SelectedFeaturesFinal(1:size(FeatureSetNameCombinations,1),1) = FeatureSetNameCombinations;
     else % here we concatenate the names where needed
         FeatureSetNameCombinationsNew = [];
         FeatureSetColumnNameCombinationsNew = [];
         for iSetCombinations = 1 : size(FeatureSetNameCombinations,1)
             FeatureSetNameCombinationsNew{iSetCombinations,1} = strjoin(FeatureSetNameCombinations(iSetCombinations,:),'');
         end
-        FinalFeatureSetsSize = size(SelectedFeaturesFinal,1);
-        SelectedFeaturesFinal(FinalFeatureSetsSize+1:FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),1) = FeatureSetNameCombinationsNew;
+        Settings.FinalFeatureSetsSize = size(Settings.SelectedFeaturesFinal,1);
+        Settings.SelectedFeaturesFinal(Settings.FinalFeatureSetsSize+1:Settings.FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),1) = FeatureSetNameCombinationsNew;
     end
 end
 
-NFeatureSets = numel(FinalFeatureSets);
+NFeatureSets = numel(Settings.FinalFeatureSets);
 
 % load data
 DataSet = xASL_tsvRead(DatasetPath);
 
 % select columns of features
-FeatureLoc = find(ismember(FinalFeatureSets(:,1),SelectedFeaturesFinal));
+FeatureLoc = find(ismember(Settings.FinalFeatureSets(:,1),Settings.SelectedFeaturesFinal));
 for nFeatureSet = 1 : size(FeatureLoc,1) 
-    FeatureNames = FinalFeatureSets(FeatureLoc(nFeatureSet),2);
+    FeatureNames = Settings.FinalFeatureSets(FeatureLoc(nFeatureSet),2);
     % select basic data
-    FeatureSet = DataSet(:,1:4); % select subject, ID, Age, Sex columns
+    FeatureSet = DataSet(:,1:5); % select subject, ID, Age, Sex, Site columns
     
     % select feature data
-    for iCell = 1 : size(FinalFeatureSets(nFeatureSet,2))
+    for iCell = 1 : size(Settings.FinalFeatureSets(nFeatureSet,2))
         FeatureNamesLoc = [];
         if iscell(FeatureNames{iCell})
             for iCell2 = 1 : numel(FeatureNames{iCell})
@@ -79,7 +73,7 @@ for nFeatureSet = 1 : size(FeatureLoc,1)
     end
     
     % save
-    FeatureSetPath = char(fullfile([FeatureSetsSavePath FinalFeatureSets{FeatureLoc(nFeatureSet),1} '.tsv']));
+    FeatureSetPath = char(fullfile([FeatureSetsSavePath Settings.FinalFeatureSets{FeatureLoc(nFeatureSet),1} '.tsv']));
     xASL_tsvWrite(FeatureSet,FeatureSetPath,1,0)
 end
 disp('Feature sets constructed')
@@ -103,9 +97,9 @@ for iCombinationSize = 1 : numel(FeatureSetsNames)
             FeatureSetNameCombinationsNew{iSetCombinations,1} = strjoin(FeatureSetNameCombinations(iSetCombinations,:),'');
             FeatureSetColumnNameCombinationsNew{iSetCombinations,1} = FeatureSetColumnNameCombinations(iSetCombinations,:);
         end
-        FinalFeatureSetsSize = size(OutputFeatures,1);
-        OutputFeatures(FinalFeatureSetsSize+1:FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),1) = FeatureSetNameCombinationsNew;
-        OutputFeatures(FinalFeatureSetsSize+1:FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),2) = FeatureSetColumnNameCombinationsNew;
+        Settings.FinalFeatureSetsSize = size(OutputFeatures,1);
+        OutputFeatures(Settings.FinalFeatureSetsSize+1:Settings.FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),1) = FeatureSetNameCombinationsNew;
+        OutputFeatures(Settings.FinalFeatureSetsSize+1:Settings.FinalFeatureSetsSize+size(FeatureSetNameCombinationsNew,1),2) = FeatureSetColumnNameCombinationsNew;
     end
 end
 end

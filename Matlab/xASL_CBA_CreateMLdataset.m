@@ -8,8 +8,9 @@ for nDataset = 1 : NDataSets
     % Demographics
     DataSetData = ImagingData{nDataset,1}; % all imaging data
     DataSetSubjects = DataSetData{1,1}(:,1); % obtain subject list
-    DataSetSubjectsAge = DataSetData{end,1}(:,4); % last cell contains ages
-    DataSetSubjectsSex = DataSetData{end,1}(:,3); % last cell contains sex, 1 being male
+    DataSetSubjectsAge = DataSetData{end,1}(:,4); % contains ages
+    DataSetSubjectsSex = DataSetData{end,1}(:,3); % contains sex, 1 being male
+    DataSetSubjectsSite = DataSetData{end,1}(:,5); % contains site
     DataSetIDs{1,1} = 'ID';
     if nDataset == 1
         DataSetIDs(2:size(DataSetData{1,1}(2:end,1),1)+1,1) = num2cell((1:1:(size(DataSetData{1,1}(2:end,1),1))))';
@@ -68,7 +69,7 @@ for nDataset = 1 : NDataSets
         DataSetASL(:,ASLDataBothHemispereLocation) = []; % remove left
     end
     
-    MLnDataSet = [DataSetSubjects DataSetIDs DataSetSubjectsAge DataSetSubjectsSex DataSetStructural DataSetASL];
+    MLnDataSet = [DataSetSubjects DataSetIDs DataSetSubjectsAge DataSetSubjectsSex DataSetSubjectsSite DataSetStructural DataSetASL];
     
     if WMHpresent == 1 % turn NaNs to 0 and create ratio
         % set NaN WMH to 0

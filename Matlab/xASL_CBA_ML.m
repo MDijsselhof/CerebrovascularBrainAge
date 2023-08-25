@@ -1,14 +1,10 @@
-function MLoutput = xASL_CBA_ML(TrainingSetPath, ValidationSetPath, TestingSetPath, Settings, SelectedFeaturesList)
+function MLoutput = xASL_CBA_ML(Settings)
 %% Brain Age Prediction
 % This wrapper loads ML configured datasets, calls Python for brain age predictions, and stores output
 
 % admin
 MLscriptPath = char(fullfile(Settings.PythonEnvironment,'MachineLearning.py')); % Python3 ML script
-FeatureSetsTrainingList = xASL_adm_GetFileList(TrainingSetPath,'^.+$','List',[],false); % get feature sets
-if ~isempty(ValidationSetPath)
-FeatureSetsValidationList = xASL_adm_GetFileList(ValidationSetPath,'^.+$','List',[],false); % get feature sets
-end
-FeatureSetsTestingList = xASL_adm_GetFileList(TestingSetPath,'^.+$','List',[],false); % get feature sets
+FeatureSets = xASL_adm_GetFileList(Settings.FeatureSetsFolder,'^.+$','List',[],false); % get feature sets
 
 % create results directory
 Settings.Paths.ResultsPath = fullfile(Settings.DataFolder,'Results/');
@@ -37,10 +33,10 @@ for nMLAlgorithm = 1 : NMLAlgorithms
     end
 end
 % create feature set list
-NFeatureSets = numel(FeatureSetsTrainingList);
+NFeatureSets = numel(FeatureSets);
 
 for nFeatureSet = 1 : NFeatureSets
-    FeatureSet = FeatureSetsTrainingList{nFeatureSet,1}; % get feature set
+    FeatureSet = FeatureSets{nFeatureSet,1}; % get feature set
     FeatureSetName = char(FeatureSet(1,13:end-4)); % get name of feature set
     if nFeatureSet == 1
         FeatureSetsList = FeatureSetName;
@@ -49,11 +45,21 @@ for nFeatureSet = 1 : NFeatureSets
     end
 end
 
+Settings.FeatureSetsList = FeatureSetsList;
+Settings.MLAlgorithmsList = MLAlgorithmsList;
+
 disp(['Features selected are : ' FeatureSetsList]);
 disp(['Algorithms selected are : ' MLAlgorithmsList]);
 
+MLInputJSONpath = fullfile(Settings.DataFolder,'MLInputSettings.json');
+MLInputJSON = jsonencode(Settings);
+
+fid = fopen(MLInputJSONpath,'w');
+fprintf(fid,'%s',MLInputJSON);
+fclose(fid);
+
 % Call Machine Learning script with provided input
-PythonCommand = ['python3 ' MLscriptPath ' --TrainingDataDir ' char(Settings.Paths.TrainingSetPath) ' --ValidationDataDir ' char(Settings.Paths.ValidationSetPath) ' --TestingDataDir ' char(Settings.Paths.TestingSetPath) ' --ResultsDataDir ' char(Settings.Paths.ResultsPath) ' --FeatureSetsList ' FeatureSetsList ' --AlgorithmsList '  MLAlgorithmsList ];
+PythonCommand = ['python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
 xASL_system(PythonCommand,1)
 
 end

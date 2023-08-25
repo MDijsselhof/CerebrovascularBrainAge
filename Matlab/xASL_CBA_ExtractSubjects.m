@@ -2,7 +2,7 @@ function ExtractedData  = xASL_CBA_ExtractSubjects(Settings, InputData, InputDat
 % Extracts Subjects based on Age_Sex.csv
 for NInputDataSets = 1 : size(InputData,1)
     for NInputImagingDataSets = 1 : size(InputData{NInputDataSets,1},1)
-        EqualSizeTraining(NInputImagingDataSets,1) = size(InputData{1,1}{NInputImagingDataSets,1},1);
+        EqualSizeTraining(NInputImagingDataSets,1) = size(InputData{NInputDataSets,1}{NInputImagingDataSets,1},1);
         UniqueSizesDatasets(NInputDataSets,1) = size(unique(EqualSizeTraining),1);
     end
 end

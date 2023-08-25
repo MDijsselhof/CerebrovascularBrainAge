@@ -52,7 +52,17 @@ for iDataSets = 1:NDataSets
     % add age and sex data
     AgeSexDataPath = xASL_adm_GetFileList(DataSetPath{iDataSets},'^Age.+$','FPList',[],false); % all scans
     AgeSexData = xASL_csvRead(AgeSexDataPath{1});
-    DataSet{iImagingData+1,:} = AgeSexData;
+    if ~max(strcmp(AgeSexData(1,:),'Site')) == 1 % check if contains site, if not, add
+        AgeSexDataSite = AgeSexData;
+        AgeSexDataSite{1,end+1} = 'Site';
+        for iSiteRow = 2:size(AgeSexDataSite,1)
+            AgeSexDataSite{iSiteRow,end} = num2str(iDataSets);
+        end
+    else
+        AgeSexDataSite = AgeSexData;
+    end
+ 
+    DataSet{iImagingData+1,:} = AgeSexDataSite;
     
     DataSets{iDataSets,:} = DataSet; % final data
 end
