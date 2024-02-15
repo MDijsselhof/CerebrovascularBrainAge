@@ -9,7 +9,7 @@ ExploreASL_Initialize
 
 addpath('/scratch/radv/mdijsselhof/CerebrovascularBrainAge/Matlab') % add Cerebrovascular Brain-age path to working directory
 %% Settings
-Settings.DataFolder = "/home/radv/mdijsselhof/my-scratch/CerebrovascularBrainAge/Data/"; %% Add studyfolder
+Settings.DataFolder = "/home/radv/mdijsselhof/my-scratch/CerebrovascularBrainAge/Data/"; %% Add folder containing Cerebrovascular Brain Age data used for training-validation-testing
 Settings.PythonEnvironment = "/home/radv/mdijsselhof/my-scratch/CerebrovascularBrainAge/Python/Scripts"; % Python3 scripts used for ML 
 Settings.CondaEnvironmentPath = '/home/radv/mdijsselhof/.conda/envs/CBA/';  % location of Conda environment containing required packages
 Settings.MLAlgorithms = ["All"]; % Select Machine Learning algorithms. Options are: ["All", "RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
@@ -19,7 +19,7 @@ Settings.CBFAtlasType = ["TotalGM","Tatu_ACA_MCA_PCA","DeepWM"]; % Select Atlas 
 Settings.FeatureType = ["T1w","FLAIR","CBF","CoV"]; % Select feature types. Options are: ["T1w", "FLAIR", "CBF", "CoV", "ATT", "Tex", or all combinations in format ["T1W",FLAIR"]]. 
 Settings.HemisphereType = ["Both"]; % Use ExploreASL values for both hemispheres ["Both"] or single ["Single"]
 Settings.ValidationMethod = ['K-fold']; % Set validation method to preferred method. Options are: ['Permutation'],['K-fold'],['Stratified K-fold']
-Settings.PermutationSplitSize = 0.2; % Set split size of validation set for permutations, between 0 and 1
+Settings.PermutationSplitSize = []; % Set split size of validation set for permutations, between 0 and 1
 Settings.ValidationMethodRepeats = 5; % Set number of K-folds, or number of permutations.
 Settings.FeatureImportance = [1];  % Turn SHAP feature importance estimation method on or off;
 Settings.FeatureImportanceForAlgorithm = ["ExtraTrees"]; % If set to specific algorithms, this will make sure feature importance is only performed for this algorithm to speed up processing. Default = [], example = ["ExtraTrees"]
