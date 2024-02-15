@@ -1,0 +1,6 @@
+participant_id	session	LongitudinalTimePoint	SubjectNList	Site	GM_vol	WM_vol	CSF_vol	GM_ICVRatio	GMWM_ICVRatio	WMH_vol	WMH_count	TotalGM_B	TotalGM_L	TotalGM_R
+StudyID	...	integer	integer	integer	Liter	Liter	Liter	ratio GM/ICV	ratio (GM+WM)/ICV	mL	n lesions (integer)	mL/100g/min	mL/100g/min	mL/100g/min
+1	ASL_1	1	1	1	0.62221	0.47073	0.49364	0.39217	0.70147	21.223	31	60	59	61
+2	ASL_1	1	1	1	0.62221	0.47073	0.49364	0.39217	0.70147	21.223	31	60	59	61
+3	ASL_1	1	1	1	0.62221	0.47073	0.49364	0.39217	0.70147	21.223	31	60	59	61
+4	ASL_1	1	1	1	0.62221	0.47073	0.49364	0.39217	0.70147	21.223	31	60	59	61
