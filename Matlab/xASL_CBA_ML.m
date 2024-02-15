@@ -4,10 +4,10 @@ function MLoutput = xASL_CBA_ML(Settings)
 
 % admin
 MLscriptPath = char(fullfile(Settings.PythonEnvironment,'MachineLearning.py')); % Python3 ML script
-FeatureSets = xASL_adm_GetFileList(Settings.FeatureSetsFolder,'^.+$','List',[],false); % get feature sets
+FeatureSets =Settings.SelectedFeaturesFinal; % get feature sets
 
 % create results directory
-Settings.Paths.ResultsPath = fullfile(Settings.DataFolder,'Results/');
+Settings.Paths.ResultsPath = fullfile(Settings.DataFolder,'Results');
 if exist(Settings.Paths.ResultsPath,'dir') == 7
     disp('Results folder already exists')
 else
@@ -36,8 +36,7 @@ end
 NFeatureSets = numel(FeatureSets);
 
 for nFeatureSet = 1 : NFeatureSets
-    FeatureSet = FeatureSets{nFeatureSet,1}; % get feature set
-    FeatureSetName = char(FeatureSet(1,13:end-4)); % get name of feature set
+    FeatureSetName = FeatureSets{nFeatureSet,1}; % get feature set
     if nFeatureSet == 1
         FeatureSetsList = FeatureSetName;
     else
@@ -58,8 +57,16 @@ fid = fopen(MLInputJSONpath,'w');
 fprintf(fid,'%s',MLInputJSON);
 fclose(fid);
 
+% turn on diary for logging
+DiaryLocation = Settings.DataFolder;
+cd(DiaryLocation)
+diary Log.txt
 % Call Machine Learning script with provided input
-PythonCommand = ['python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
-xASL_system(PythonCommand,1)
+PythonCommand = ['module load Anaconda3/2023.03;conda activate ' Settings.CondaEnvironmentPath '; ' 'python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
+system(PythonCommand)
+
+diary off
+
+disp('Predictions finished!');
 
 end

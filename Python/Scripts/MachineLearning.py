@@ -5,10 +5,12 @@
 import argparse
 import os
 import numpy as np
-import torch
-import shap
+import torch 
+import shap 
 import copy
 import json
+import matplotlib
+import matplotlib.pyplot as plt
 import pandas as pd
 from scipy import stats
 from tqdm import tqdm
@@ -38,7 +40,7 @@ from sklearn.inspection import permutation_importance
 
 # external models
 from xgboost import XGBRegressor
-from sklearn_rvm import EMRVR
+from sklearn_rvm import EMRVR # pip install sklearn-rvm
 from skrvm import RVR # pip install https://github.com/JamesRitchie/scikit-rvm/archive/master.zip
 
 
@@ -50,14 +52,14 @@ MLInputJSON = open(MLInputJSONPath)
 Settings = json.load(MLInputJSON) 
 
 # testing
-# MLInputJSON = open('/scratch/mdijsselhof/Cerebrovascular-Brain-age/Data/MLInputSettings.json')
-# Settings = json.load(MLInputJSON)
+#MLInputJSON = open('/home/radv/mdijsselhof/my-scratch/CerebrovascularBrainAge/Data/MLInputSettings.json')
+#Settings = json.load(MLInputJSON)
 
 #%% DataPaths
 TrainingFeatureSetDataDir = Settings['Paths']['TrainingSetPath'] + 'FeatureSets/' # test script: 
 ValidationFeatureSetDataDir = Settings['Paths']['ValidationSetPath'] + 'FeatureSets/' # test script: 
 TestingFeatureSetDataDir = Settings['Paths']['TestingSetPath'] + 'FeatureSets/' # test script: 
-ResultsDataDir = Settings['Paths']['ResultsPath']  # test script: 
+ResultsDataDir = Settings['Paths']['ResultsPath'] + '/'  # test script: 
     
 # feature set list
 FeatureSetsList = Settings['FeatureSetsList']
@@ -135,35 +137,49 @@ def evaluation_metrics(y_test, y_pred):
     return mae, rmse, R2, exp_var
 
 # feature importance
-def Feature_Importance(X_train, X_test, y_test, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod):
-    if FeatureImportanceEstimationMethod == 'Permutation':
-        X_test_FI = X_test
-        X_test_FI.columns=range(X_test_FI.shape[1]) 
-        Result = permutation_importance(Algorithm_instantiated, X_test_FI, y_test, n_repeats=100, random_state=42)
-        ResultMeans = (Result.importances_mean).reshape(-1,1)
-        Scaler = MinMaxScaler() # scale for relative importances     
-        FeatureImportance = pd.DataFrame(Result.importances_mean, index=X_test.columns,columns=[AlgorithmName])
-        FeatureImportanceScaled = pd.DataFrame(Scaler.fit_transform(ResultMeans), index=X_test.columns,columns=[AlgorithmName])
-            
-    else:
-        def calculate_shap_feature_importance(Algorithm_instantiated, X_train):
-            try: # for algorithms recognised by SHAP
-                explainer = shap.Explainer(Algorithm_instantiated,X_train)
-                shap_values = explainer.shap_values(X_train)
+def Feature_Importance(X_train_SC, AlgorithmName, Algorithm_instantiated, Settings):
+    NoOutput = 0
+    if Settings['FeatureImportanceForAlgorithm'] == AlgorithmName or Settings['FeatureImportanceForAlgorithm'] == []:
+        if AlgorithmName in ['RandomForest','ExtraTrees','DecisionTree','GradBoost','XGBoost','AdaBoost']:
+            try:
+                explainer = shap.TreeExplainer(Algorithm_instantiated,X_train_SC)
+                shap_values = explainer.shap_values(X_train_SC)
             except:
-                try: # for algorithms not recognised by SHAP
-                    explainer = shap.Explainer(Algorithm_instantiated.predict,X_train)
-                    shap_values = explainer.shap_values(X_train) 
-                except: # for regressions using kernels
-                    explainer = shap.KernelExplainer(Algorithm_instantiated.predict,X_train)
-                    shap_values = explainer.shap_values(X_train) 
-            return shap_values
-        FeatureImportance = {}
-        FeatureImportanceScaled = {}
-        shap_values = abs(calculate_shap_feature_importance(Algorithm_instantiated, X_train))
-        FeatureImportance = pd.DataFrame(shap_values,columns=X_train.columns)
-        FeatureImportance = pd.DataFrame(FeatureImportance.mean(axis=0),columns=[AlgorithmName])
-    return FeatureImportance,FeatureImportanceScaled
+                explainer = shap.Explainer(Algorithm_instantiated.predict,X_train_SC)
+                shap_values = explainer(X_train_SC) 
+        elif AlgorithmName in [ 'BayesianRidge','Lasso','Ridge','LassoLars','ElasticNetCV','LinearReg','SGDReg','LassoLarsCV','ElasticNet','RidgeCV']:
+            try:
+                explainer = shap.LinearExplainer(Algorithm_instantiated,X_train_SC)
+                shap_values = explainer.shap_values(X_train_SC)
+            except: 
+                explainer = shap.Explainer(Algorithm_instantiated.predict,X_train_SC)
+                shap_values = explainer(X_train_SC) 
+        elif AlgorithmName in [ 'GPR','SVR','RVM','RVR','LinearSVR']:
+            #try:
+            #    explainer = shap.LinearExplainer(Algorithm_instantiated,X_train_SC)
+            #    shap_values = explainer.shap_values(X_train_SC)
+            #except: 
+            #    explainer = shap.Explainer(Algorithm_instantiated.predict,X_train_SC)
+            #    shap_values = explainer(X_train_SC) 
+            print('currently not implemented for GPR, SVR, RVM, RVR, LinearSVR due to long calculating times and bad general performance')
+            NoOutput = 1
+            shap_values = 0
+        elif AlgorithmName in [ 'KNN']:
+            try:
+                X_train_SC_sample = shap.kmeans(X_train_SC, 300)
+                explainer = shap.KernelExplainer(Algorithm_instantiated.predict,X_train_SC_sample)
+                shap_values = explainer.shap_values(X_train_SC_sample)
+            except: #
+                explainer = shap.Explainer(Algorithm_instantiated.predict,X_train_SC)
+                shap_values = explainer(X_train_SC) 
+    else:
+        print(f"Algorithm {AlgorithmName} not selected for feature importance estimation, skipping")
+        NoOutput = 1
+        shap_values = 0
+    return  shap_values, NoOutput
+
+# testing 
+# TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results, Settings['ValidationMethodRepeats'], Settings['PermutationSplitSize'])          
 
 # create new validation function
 def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results_validation, NPermutation, TestSize):
@@ -173,17 +189,24 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
     Results_validation = copy.deepcopy(Results_validation)
     TrainingSet = TrainingSet
     y_train =  TrainingSet['Age']
-    
-    sex = TrainingSet['Sex']
-    if 'Site' in TrainingSet.columns:
-        StratifyUniqueCombinations = TrainingSet[['Sex', 'Site']].drop_duplicates()
-        StratifyUniqueCombinations['Stratify_Combinations'] = StratifyUniqueCombinations['Sex'].astype(str) + '_' + StratifyUniqueCombinations['Site'].astype(str)
-        TrainingSet = TrainingSet.merge(StratifyUniqueCombinations, on=['Sex', 'Site'], how='left')
-        y_stratify =TrainingSet['Stratify_Combinations'] 
-        print('Site and Sex variables are present, combining into unique combinations to include both in stratification')
-    else:
-        y_stratify = TrainingSet['Sex']
 
+### add checking for N per bin, if < KFoldSplits try again with fewer bins
+    if 'Site' in TrainingSet.columns and len(set(TrainingSet['Site'])) > 1:
+        TrainingSet['Age_bins'] = pd.cut(TrainingSet['Age'],bins=10,labels=False)
+        StratifyUniqueCombinations = TrainingSet[['Sex', 'Site','Age_bins']].drop_duplicates()
+        StratifyUniqueCombinations['Stratify_Combinations'] = StratifyUniqueCombinations['Sex'].astype(str) + '_' + StratifyUniqueCombinations['Site'].astype(str) + '_' + StratifyUniqueCombinations['Age_bins'].astype(str)
+        TrainingSet = TrainingSet.merge(StratifyUniqueCombinations, on=['Sex', 'Site','Age_bins'], how='left')
+        y_stratify =TrainingSet['Stratify_Combinations'] 
+        print('Site, Sex and Age variables are present, combining into unique combinations to include both in stratification using 10 bins for age')
+    else:
+        TrainingSet['Age_bins'] = pd.cut(TrainingSet['Age'],bins=5,labels=False)
+        StratifyUniqueCombinations = TrainingSet[['Sex','Age_bins']].drop_duplicates()
+        StratifyUniqueCombinations['Stratify_Combinations'] = StratifyUniqueCombinations['Sex'].astype(str) + '_' + StratifyUniqueCombinations['Age_bins'].astype(str)
+        TrainingSet = TrainingSet.merge(StratifyUniqueCombinations, on=['Sex','Age_bins'], how='left')
+        y_stratify =TrainingSet['Stratify_Combinations'] 
+        print('Sex and Age variables are present, combining into unique combinations to include both in stratification')
+        
+        
     mae_concat = []
     rmse_concat = []
     R2_concat = []
@@ -226,7 +249,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             RegIntercept_concat.append(RegIntercept)
             
     elif ValidationMethod == 'Permutation' and 'Site' in TrainingSet.columns: # stratified shuffle-split
-        print('Performing training set validation through permutation , including stratification for Site and Sex')
+        print('Performing training set validation through permutation , including stratification for Site, Sex and Age')
         rs = StratifiedShuffleSplit(n_splits=NPermutation, test_size=(TestSize), random_state=0)
         rs.get_n_splits(X_train_SC,y_stratify)
         for i, (train_index, test_index) in tqdm(enumerate(rs.split(X_train_SC, y_stratify))):
@@ -261,7 +284,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             
             
     elif 'Site' in TrainingSet.columns: # stratified k-fold  
-        print('Performing training set validation through stratified K-fold, stratifying for site and sex ')
+        print('Performing training set validation through stratified K-fold, including stratification for Site, Sex and Age')
         skf = StratifiedKFold(n_splits=KFoldSplits)
         skf.get_n_splits(X_train_SC, y_stratify)
         for i, (train_index, test_index) in enumerate(skf.split(X_train_SC, y_stratify)):
@@ -294,7 +317,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             RegCoef_concat.append(RegCoef)
             RegIntercept_concat.append(RegIntercept)
     else:
-        print('Performing training set validation through K-fold ')
+        print('Performing training set validation through K-fold, including stratification for Sex and Age')
         kf = KFold(n_splits=KFoldSplits)
         kf.get_n_splits(X_train_SC)
         for i, (train_index, test_index) in tqdm(enumerate(kf.split(X_train_SC))):
@@ -345,15 +368,17 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
     return Results_validation, RegCoef, RegIntercept
 
 # %% Cerebrovascular brain-age prediction
-def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results, FeatureSetsList, SelectedAlgorithmsList, FeatureImportanceEstimationMetho, ValidationMethod, Settings):
+def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results, FeatureSetsList, SelectedAlgorithmsList, FeatureImportanceEstimationMethod, ValidationMethod, Settings):
     # create result dicts
     Results_val = copy.deepcopy(Results)
     Results_test = copy.deepcopy(Results)
     Results_test_cor = copy.deepcopy(Results)
     
     # select feature set
-    for FeatureSetName in tqdm(FeatureSetsList):
-        
+    for iFeatureSetName, FeatureSetName in enumerate(FeatureSetsList):
+        print("\n------------------------------------------------------------------------------")
+        print(f"\n{FeatureSetName}, feature set {iFeatureSetName} out of {len(FeatureSetsList)}")
+        print("\n------------------------------------------------------------------------------")
         # create dataframe for saving predicted and chronological brain ages
         PredictedAgeDF_val = pd.DataFrame(columns=(AlgorithmsList))
         PredictedAgeDF_test = pd.DataFrame(columns=(AlgorithmsList))
@@ -365,19 +390,19 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
         TestingSetPath = TestingFeatureSetDataDir + 'TestingSet_' + FeatureSetName + '.tsv'
         
         # read training, validation and testing data
-        TrainingSet = pd.read_csv(TrainingSetPath,engine='python', sep='\t')
+        TrainingSet = pd.read_csv(TrainingSetPath,engine='python', encoding = 'utf8',sep='\t',)
         
         if os.path.isdir(ValidationFeatureSetDataDir) == 0:
             ValidationSetExists = 0 # continue with validation data creation using permutation or (stratified) K-fold splitting
         else: 
             ValidationSetExists = 1
-            ValidationSet = pd.read_csv(ValidationSetPath,engine='python', sep='\t')
+            ValidationSet = pd.read_csv(ValidationSetPath,engine='python',encoding = 'utf8', sep='\t')
             
         if os.path.isdir(TestingFeatureSetDataDir) == 0:
             TestingSetExists = 0 # continue with validation data creation using permutation or (stratified) K-fold splitting
         else: 
             TestingSetExists = 1
-            TestingSet = pd.read_csv(TestingSetPath,engine='python', sep='\t')        
+            TestingSet = pd.read_csv(TestingSetPath,engine='python',encoding = 'utf8', sep='\t')        
     
         # split data for ML
         X_train, y_train = TrainingSet.drop(['participant_id', 'ID', 'Age', 'Sex','Site'], axis=1), TrainingSet['Age']
@@ -395,9 +420,14 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
             X_test_SC = SC.transform(X_test)
         
         index = 0
+       
         
         # select algorithm and perform ML
-        for AlgorithmName, Algorithm in tqdm(SelectedAlgorithmsList.items(),desc='Algorithms',leave=False):
+        for iAlgorithm, (AlgorithmName, Algorithm) in enumerate(SelectedAlgorithmsList.items()):
+            print("\n-----------------------------------------------------------------------------------")
+            print(f"\n{AlgorithmName}, algorithm {iAlgorithm} out of {len(SelectedAlgorithmsList.items())}")
+            print("\n-----------------------------------------------------------------------------------")
+
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
                 kwargs = {}
@@ -406,7 +436,8 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
     
             Algorithm_instantiated = Algorithm(**kwargs)
             Algorithm_instantiated.fit(X_train_SC, y_train)
-            
+               
+
             ValidationSetCorrection = []
             # validation set evaluation
             if  ValidationSetExists == 1: # use predefined validation set
@@ -422,13 +453,6 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                 Results_val['explained_var'].append(exp_var_val)
             
                 PredictedAgeDF_val[AlgorithmName] = y_val_pred
-                
-                if index == 0:
-                    FeatureImportance_val, FeatureImportanceScaled_val = Feature_Importance(X_train, X_val, y_val, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod, ValidationMethod) # test set feature importance first iteration
-                else :
-                    FeatureImportance_val_append, FeatureImportanceScaled_val_append = Feature_Importance(X_train, X_val, y_val, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod) # test set feature importance after first iteration
-                    FeatureImportance_val[AlgorithmName] = FeatureImportance_val_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
-                    FeatureImportanceScaled_val[AlgorithmName] = FeatureImportanceScaled_val_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
                 
                 RegCoef, RegIntercept = LinearAgeBias(y_val_pred, y_val)  # determine age bias 
                 
@@ -462,13 +486,25 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                 
                 PredictedAgeDF_test[AlgorithmName] = y_pred_test
                 
-                if index == 0:
-                    FeatureImportance_test, FeatureImportanceScaled_test= Feature_Importance(X_train, X_test, y_test, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod) # test set feature importance first iteration
-                else :
-                    FeatureImportance_test_append, FeatureImportanceScaled_test_append = Feature_Importance(X_train,X_test, y_test, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod) # test set feature importance after first iteration
-                    FeatureImportance_test[AlgorithmName] = FeatureImportance_test_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
-                    FeatureImportanceScaled_test[AlgorithmName] = FeatureImportanceScaled_test_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
-        
+                if Settings['FeatureImportance'] == 1:
+                    
+                    print('Performing SHAP feature importance estimation')
+                    SHAPbarplot = ResultsDataDir + 'SHAP_bar_' + FeatureSetName + '_'+AlgorithmName+'.svg' 
+                    SHAPdotplot = ResultsDataDir + 'SHAP_dot_' + FeatureSetName + '_'+AlgorithmName+'.svg' 
+
+                    shap_values, NoOutput = Feature_Importance(X_train_SC, AlgorithmName, Algorithm_instantiated,Settings)
+                    
+                    if NoOutput == 0:
+                        fig = plt.figure()
+                        shap.summary_plot(shap_values,X_train,plot_type='bar',show=False)
+                        fig.savefig(SHAPbarplot)
+                        plt.close(fig)
+                        
+                        fig = plt.figure()
+                        shap.summary_plot(shap_values,X_train,show=False)
+                        fig.savefig(SHAPdotplot)
+                        plt.close(fig)
+                
                 if ValidationSetCorrection == 1:
                    # test  corrected set
                    y_pred_test_cor = y_pred_test - (RegCoef * y_test + RegIntercept)
@@ -484,21 +520,16 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                    Results_test_cor['explained_var'].append(exp_var_test_cor)
             
                    PredictedAgeDF_test_cor[AlgorithmName] = y_pred_test_cor
-                   
-                   if index == 0:
-                        FeatureImportance_test_cor, FeatureImportanceScaled_test_cor = Feature_Importance(X_train, X_test, y_test, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod) # test set feature importance first iteration
-                   else :
-                        FeatureImportance_test_cor_append, FeatureImportanceScaled_test_cor_append = Feature_Importance(X_train, X_test, y_test, AlgorithmName, Algorithm_instantiated, FeatureImportanceEstimationMethod) # test set feature importance after first iteration     
-                        FeatureImportance_test_cor[AlgorithmName] = FeatureImportance_test_cor_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
-                        FeatureImportanceScaled_test_cor[AlgorithmName] = FeatureImportanceScaled_test_cor_append[AlgorithmName].values # combined feature importance of all argorithms, per feature set
-        
-        
+
                 index += 1 # add index for next interation to append feature importances         
         # save predicted ages 
         if TestingSetExists == 1:
             PredictedAgeDF_test['Chronological_Age'] = y_test
+            PredictedAgeDF_test['participant_id'] =  TestingSet['participant_id']
             if ValidationSetExists == 1:
                 PredictedAgeDF_val['Chronological_Age'] = y_val
+                PredictedAgeDF_test_cor['Chronological_Age'] = y_test
+            elif ValidationSetCorrection == 1:
                 PredictedAgeDF_test_cor['Chronological_Age'] = y_test
             
             TestFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test.csv' # path for saving predicted ages
@@ -506,11 +537,6 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
             ResultsDF_test = pd.DataFrame.from_dict(Results_test,orient='index')
             ResultsDF_test_final = ResultsDF_test.transpose() 
             
-            TestFeatureSetFeatureImportancePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_FI.csv' # path for saving predicted ages feature importance
-            TestFeatureSetFeatureImportanceScaledPath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_FI_Scaled.csv' # path for saving predicted ages feature importance
-        
-            FeatureImportance_test.to_csv(TestFeatureSetFeatureImportancePath, index=True)
-            FeatureImportanceScaled_test.to_csv(TestFeatureSetFeatureImportanceScaledPath, index=True)
             
             if ValidationSetExists == 1 or ValidationSetCorrection == 1:
                 ValFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_val.csv' # path for saving predicted ages
@@ -522,18 +548,6 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                 ResultsDF_test_cor = pd.DataFrame.from_dict(Results_test_cor,orient='index')
                 ResultsDF_val_final = ResultsDF_val.transpose()
                 ResultsDF_test_cor_final = ResultsDF_test_cor.transpose()
-                
-                TestFeatureSetCorFeatureImportancePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_cor_FI.csv' # path for saving corrected predicted ages feature importance
-                TestFeatureSetCorFeatureImportanceScaledPath = ResultsDataDir + FeatureSetName + '_PredictedAges_test_cor_FI_Scaled.csv' # path for saving corrected predicted ages feature importance
-        
-                FeatureImportance_test_cor.to_csv(TestFeatureSetCorFeatureImportancePath, index=True)
-                FeatureImportanceScaled_test_cor.to_csv(TestFeatureSetCorFeatureImportanceScaledPath, index=True)
-        
-                ValFeatureSetFeatureImportancePath = ResultsDataDir + FeatureSetName + '_PredictedAges_val_FI.csv' # path for saving validation predicted ages feature importance
-                ValFeatureSetFeatureImportanceScaledPath = ResultsDataDir + FeatureSetName + '_PredictedAges_val_FI_Scaled.csv' # path for saving validation predicted ages feature importance
-         
-                FeatureImportance_val.to_csv(ValFeatureSetFeatureImportancePath, index=True)
-                FeatureImportanceScaled_val.to_csv(ValFeatureSetFeatureImportanceScaledPath, index=True)
                 
             else:
                 ResultsDF_val_final = []

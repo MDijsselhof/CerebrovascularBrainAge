@@ -39,6 +39,7 @@ if isempty(TestingSetList)
     Settings.TestInTraining = 1;
 else
     [TestingData, TestingDataPaths] = LoadInputData(TestingSetList, Settings.Paths.TestingSetPath, Settings.CBFAtlasType); % load Testing datasets
+    Settings.TestInTraining = 0;
 end
 
 %% Extract correct subject data
@@ -85,13 +86,28 @@ if ~Settings.TestInTraining == 1
     end
 end
 
+%% clean data   
+% several issues with data loading and tsv/csv readers may results in added
+% strings in the headers. This part will remove the added strings and
+% return the data to its original format
+
+% BasicHeaderString = ["participant_id","ID","Age","Sex","Site"];
+% 
+% MLFeatureHeaders= fields(Settings.FeatureSets(1));
+% NMLFeatureHeaders= numel(fields(Settings.FeatureSets(1)));
+% 
+% for iFeatureSet = 1 : NMLFeatureHeaderString
+%     getfield(Settings.FeatureSets,MLFeatureHeaders{1}
+%     NSubFeatures = numel(fields(Settings.FeatureSets(1)));
+% end
+
 %% Save data
 % save data for use in ML
 % Training data is either divided into training and validation, or divided into training and testing based the TestInTraining boolean
 
-TrainingDataPath = char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataComplete.tsv'));
-ValidationDataPath = char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataComplete.tsv'));
-TestingDataPath = char(fullfile(Settings.Paths.TestingSetPath,'TestingDataComplete.tsv'));
+TrainingDataPath = char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataComplete.csv'));
+ValidationDataPath = char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataComplete.csv'));
+TestingDataPath = char(fullfile(Settings.Paths.TestingSetPath,'TestingDataComplete.csv'));
 
 if Settings.TestInTraining == 1 && Settings.ValidateInTraining == 1 % only training data available
         
@@ -99,7 +115,7 @@ if Settings.TestInTraining == 1 && Settings.ValidateInTraining == 1 % only train
     MLTrainingDataShuffled = MLTrainingData(1,:);
     MLTrainingDataShuffled(2:numel(MLTrainingData(2:end,1))+1,:) = MLTrainingDataNoHeader(randperm(numel(MLTrainingDataNoHeader(:,1))),:);
     
-    xASL_tsvWrite(MLTrainingDataShuffled,TrainingDataPath,1,0);
+    xASL_csvWrite(MLTrainingDataShuffled,TrainingDataPath,1);
     disp('Training data saved, testing will be done via validation steps in the training data set')
 
 elseif Settings.TestInTraining == 1 && ~Settings.ValidateInTraining == 1 % training and validation data available
@@ -111,8 +127,8 @@ elseif Settings.TestInTraining == 1 && ~Settings.ValidateInTraining == 1 % train
     MLValidationDataShuffled = MLValidationData(1,:);
     MLValidationDataShuffled(2:numel(MLValidationData(2:end,1))+1,:) = MLValidationDataNoHeader(randperm(numel(MLValidationDataNoHeader(:,1))),:);
     
-    xASL_tsvWrite(MLTrainingDataShuffled,TrainingDataPath,1,0);
-    xASL_tsvWrite(MLValidationDataShuffled,ValidationDataPath,1,0);
+    xASL_csvWrite(MLTrainingDataShuffled,TrainingDataPath,1);
+    xASL_csvWrite(MLValidationDataShuffled,ValidationDataPath,1);
     disp('Training data and validation data saved, testing will be done via validation steps in the training data set')
     
 elseif  ~Settings.TestInTraining == 1 && Settings.ValidateInTraining == 1 % training and testing data available
@@ -125,11 +141,11 @@ elseif  ~Settings.TestInTraining == 1 && Settings.ValidateInTraining == 1 % trai
     MLTestingDataShuffled = MLTestingData(1,:);
     MLTestingDataShuffled(2:numel(MLTestingData(2:end,1))+1,:) = MLTestingDataNoHeader(randperm(numel(MLTestingDataNoHeader(:,1))),:);
     
-    xASL_tsvWrite(MLTrainingDataShuffled,TrainingDataPath,1,0);
-    xASL_tsvWrite(MLTestingDataShuffled,TestingDataPath,1,0);
+    xASL_csvWrite(MLTrainingDataShuffled,TrainingDataPath,1);
+    xASL_csvWrite(MLTestingDataShuffled,TestingDataPath,1);
     disp('Training data and testing data saved, validation will be performed in the training data set')
     
-else % training, validatino and testing data available
+else % training, validation and testing data available
     MLTrainingDataNoHeader = MLTrainingData(2:end,:);
     MLTrainingDataShuffled = MLTrainingData(1,:);
     MLTrainingDataShuffled(2:numel(MLTrainingData(2:end,1))+1,:) = MLTrainingDataNoHeader(randperm(numel(MLTrainingDataNoHeader(:,1))),:);
@@ -142,9 +158,9 @@ else % training, validatino and testing data available
     MLTestingDataShuffled = MLTestingData(1,:);
     MLTestingDataShuffled(2:numel(MLTestingData(2:end,1))+1,:) = MLTestingDataNoHeader(randperm(numel(MLTestingDataNoHeader(:,1))),:);
     
-    xASL_tsvWrite(MLTrainingDataShuffled,TrainingDataPath,1,0);
-    xASL_tsvWrite(MLValidationDataShuffled,ValidationDataPath,1,0);
-    xASL_tsvWrite(MLTestingDataShuffled,TestingDataPath,1,0);
+    xASL_csvWrite(MLTrainingDataShuffled,TrainingDataPath,1);
+    xASL_csvWrite(MLValidationDataShuffled,ValidationDataPath,1);
+    xASL_csvWrite(MLTestingDataShuffled,TestingDataPath,1);
     disp('Training data, validation and testing data saved')
 end
 

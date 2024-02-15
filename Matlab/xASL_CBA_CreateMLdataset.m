@@ -32,7 +32,7 @@ for nDataset = 1 : NDataSets
         DataStart = NonStructDataStart + 2;
         StructuralEnd = NonStructDataStart + 1;
         WMHpresent = 1 ;
-        if contains(DataSetData{1,1}(1,NonStructDataStart),'Motion') == 1
+        if contains(DataSetData{1,1}(1,StructuralEnd + 1),'Motion') == 1
             DataStart = NonStructDataStart + 3;
             StructuralEnd = NonStructDataStart + 1;
             MotionPresent = 1;
@@ -87,13 +87,7 @@ for nDataset = 1 : NDataSets
         MLnDataSet(2:end,WMHvolcolumn) = num2cell(WMHvolWMvol);
         MLnDataSet{1,WMHvolcolumn} = 'WMHvol_WMvol';
     end
-    
-    % remove NaN subjects
-    [NaNlocRow, NanLocColumn] = find(contains(DataSetASL(:,:),'n/a'));
-    UniqueNanLocRow = unique(NaNlocRow);
-    RemovedSubjectList(1:size(MLnDataSet(UniqueNanLocRow,1),1),nDataset) = MLnDataSet(UniqueNanLocRow,1);
-    MLnDataSet(UniqueNanLocRow,:) = [];
-    
+        
     % remove selected subjects
     nDataSetRemoveSubjectsList = RemoveSubjectsList;
     if ~isempty(nDataSetRemoveSubjectsList) == 1
@@ -107,6 +101,14 @@ for nDataset = 1 : NDataSets
         MLData(end+1:(end+(size(MLnDataSet(:,1),1)-1)),:) = MLnDataSet(2:end,:);
     end
 end
+
+% remove NaN subjects
+MLDataFindNaN = cellfun(@num2str,MLData,'un',0);
+[NaNlocRow, ~] = find(contains(MLDataFindNaN(:,:),'n/a'));
+UniqueNanLocRow = unique(NaNlocRow);
+RemovedSubjectList(1:size(MLDataFindNaN(UniqueNanLocRow,1),1),nDataset) = MLDataFindNaN(UniqueNanLocRow,1);
+MLData(UniqueNanLocRow,:) = [];
+
 % remove empty rows
 MLData = MLData(~cellfun(@isempty,MLData(:,1)),:);
 end

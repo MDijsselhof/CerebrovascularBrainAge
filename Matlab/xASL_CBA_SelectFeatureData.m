@@ -47,7 +47,7 @@ end
 NFeatureSets = numel(Settings.FinalFeatureSets);
 
 % load data
-DataSet = xASL_tsvRead(DatasetPath);
+DataSet = xASL_csvRead(DatasetPath);
 
 % select columns of features
 FeatureLoc = find(ismember(Settings.FinalFeatureSets(:,1),Settings.SelectedFeaturesFinal));
