@@ -1,5 +1,5 @@
 # Cerebrovascular-Brain-age
-Repository for Cerebrovascular Brain-age estimation. This package predicts age based on T1w, FLAIR and ASL MRI imaging following these steps:
+Repository for Cerebrovascular Brain-age estimation, published at https://onlinelibrary.wiley.com/doi/full/10.1002/hbm.26242. This package predicts age based on T1w, FLAIR and ASL MRI imaging following these steps:
 
 1. Create training-validation-testing datasets through, by default, ExploreASL output (T1w, FLAIR, ASL) in .csv format.
 2. Create manually selected feature sets to perform age estimation.
