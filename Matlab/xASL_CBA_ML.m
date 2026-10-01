@@ -66,7 +66,7 @@ DiaryLocation = Settings.DataFolder;
 cd(DiaryLocation)
 diary Log.txt
 % Call Machine Learning script with provided input
-PythonCommand = ['module load anaconda3/2024.10-1;conda activate ' Settings.CondaEnvironmentPath '; python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
+PythonCommand = ['module load ' Settings.CondaVersionName ';conda activate ' Settings.CondaEnvironmentPath '; python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
 system(PythonCommand)
 
 diary off

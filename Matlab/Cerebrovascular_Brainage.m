@@ -12,6 +12,7 @@ addpath('/home/P074668/Work/CerebrovascularBrainAge/CerebrovascularBrainAge/Matl
 Settings.DataFolder = "/home/P074668/Work/CerebrovascularBrainAge/CerebrovascularBrainAge/Data/"; %% Add folder containing Cerebrovascular Brain Age data used for training-validation-testing
 Settings.PythonEnvironment = "/home/P074668/Work/CerebrovascularBrainAge/CerebrovascularBrainAge/Python/Scripts"; % Python3 scripts used for ML 
 Settings.CondaEnvironmentPath = '/home/P074668/.conda/envs/CBA/';  % location of Conda environment containing required packages
+Settings.CondaVersionName = 'anaconda3/2024.10-1'; % name of conda version to load
 Settings.MLAlgorithms = ["ExtraTrees"]; % Select Machine Learning algorithms. Options are: ["All", "RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", 
 % "LinearReg", "SVR", "Lasso", "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", 
 % "LassoLarsCV", "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"]
