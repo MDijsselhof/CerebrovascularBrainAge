@@ -11,7 +11,7 @@ Cerebrovascular Brain-age estimation requires three folders:
 
 - Data
 - Matlab
-- Python
+- Python (Version 3.12 confirmed to be working)
 	- Packages:
  		- argparse
   		- os
