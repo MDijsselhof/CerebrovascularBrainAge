@@ -17,10 +17,10 @@ end
 % create selected algorithm list
 if isequal(Settings.MLAlgorithms,"All") == 1 % use all algorithms
     MLAlgorithms = ["RandomForest", "DecisionTree", "XGBoost", "BayesianRidge", "LinearReg", "SVR", "Lasso",...
-    "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", "LassoLarsCV",...
-    "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"];
+        "GPR", "ElasticNetCV", "ExtraTrees", "GradBoost", "AdaBoost", "KNN", "LassoLarsCV",...
+        "LinearSVR", "RidgeCV", "SGDReg", "Ridge", "LassoLars", "ElasticNet", "RVM", "RVR"];
 else
-    MLAlgorithms = Settings.MLAlgorithms; % selection of ML algorithms    
+    MLAlgorithms = Settings.MLAlgorithms; % selection of ML algorithms
 end
 NMLAlgorithms = numel(MLAlgorithms); % number of algorithms used for Cerebrovascular Brain-age prediction
 
@@ -51,6 +51,10 @@ disp(['Features selected are : ' FeatureSetsList]);
 disp(['Algorithms selected are : ' MLAlgorithmsList]);
 
 MLInputJSONpath = fullfile(Settings.DataFolder,'MLInputSettings.json');
+if exist(MLInputJSONpath) == 2 % MLInputJSON exists, so first delete
+    delete(MLInputJSONpath)
+end
+
 MLInputJSON = jsonencode(Settings);
 
 fid = fopen(MLInputJSONpath,'w');
@@ -62,7 +66,7 @@ DiaryLocation = Settings.DataFolder;
 cd(DiaryLocation)
 diary Log.txt
 % Call Machine Learning script with provided input
-PythonCommand = ['module load Anaconda3/2023.03;conda activate ' Settings.CondaEnvironmentPath '; ' 'python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
+PythonCommand = ['module load anaconda3/2024.10-1;conda activate ' Settings.CondaEnvironmentPath '; python3 ' MLscriptPath ' --MLInputJSON ' char(MLInputJSONpath)];
 system(PythonCommand)
 
 diary off

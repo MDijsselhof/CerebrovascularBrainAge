@@ -60,7 +60,6 @@ NTrainingSets = numel(TrainingData); % amount of training datasets
 [MLTrainingData, RemovedSubjectListTraining]= xASL_CBA_CreateMLdataset(TrainingData, NTrainingSets, Settings.HemisphereType, Settings.RemoveTrainingSubjectsList);
 % save removed subjects
 if ~isempty(Settings.RemoveTrainingSubjectsList) == 1
-    RemovedSubjectListTraining(1:size(Settings.RemoveTrainingSubjectsList,2),end+1) = cellstr(Settings.RemoveTrainingSubjectsList)';
     xASL_tsvWrite(RemovedSubjectListTraining, char(fullfile(Settings.Paths.TrainingSetPath,'TrainingDataRemovedSubjects.tsv')),1,0);
 end
 
@@ -70,8 +69,7 @@ if ~Settings.ValidateInTraining == 1
     [MLValidationData, RemovedSubjectListValidation] = xASL_CBA_CreateMLdataset(ValidationData, NValidationSets, Settings.HemisphereType, Settings.RemoveValidationSubjectsList);
     % save removed subjects
     if ~isempty(Settings.RemoveValidationSubjectsList) == 1
-        RemovedSubjectListTesting(1:size(Settings.RemoveValidationSubjectsList,2),end+1) = cellstr(Settings.RemoveValidationSubjectsList)';
-        xASL_tsvWrite(RemovedSubjectListTesting, char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataRemovedSubjects.tsv')),1,0);
+        xASL_tsvWrite(RemovedSubjectListValidation, char(fullfile(Settings.Paths.ValidationSetPath,'ValidationDataRemovedSubjects.tsv')),1,0);
     end
 end
 
@@ -81,8 +79,7 @@ if ~Settings.TestInTraining == 1
     [MLTestingData, RemovedSubjectListTesting] = xASL_CBA_CreateMLdataset(TestingData, NTestingSets, Settings.HemisphereType, Settings.RemoveTestingSubjectsList);
     % save removed subjects
     if ~isempty(Settings.RemoveTestingSubjectsList) == 1
-        RemovedSubjectListTesting(1:size(Settings.RemoveTestingSubjectsList,2),end+1) = cellstr(Settings.RemoveTestingSubjectsList)';
-        xASL_tsvWrite(RemovedSubjectListTesting, char(fullfile(Settings.Paths.TestingSetPath,'TestingDataRemovedSubjects.tsv')),1,0);
+        %xASL_tsvWrite(RemovedSubjectListTesting, char(fullfile(Settings.Paths.TestingSetPath,'TestingDataRemovedSubjects.tsv')),1,0);
     end
 end
 

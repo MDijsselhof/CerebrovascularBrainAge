@@ -27,6 +27,7 @@ from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score, e
 from sklearn.model_selection import ShuffleSplit
 from sklearn.model_selection import StratifiedKFold
 from sklearn.model_selection import KFold
+from sklearn.inspection import permutation_importance
 
 # sklearn models
 from sklearn.ensemble import RandomForestRegressor, ExtraTreesRegressor, GradientBoostingRegressor, AdaBoostRegressor
@@ -130,7 +131,7 @@ def LinearAgeBias(y_val_pred, y_val):
 # global evaluation metrics
 def evaluation_metrics(y_test, y_pred):
     mae = mean_absolute_error(y_test, y_pred)
-    rmse = mean_squared_error(y_test, y_pred, squared=False)
+    rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     R2 = r2_score(y_test, y_pred)
     exp_var = explained_variance_score(y_test, y_pred)
 
@@ -182,7 +183,7 @@ def Feature_Importance(X_train_SC, AlgorithmName, Algorithm_instantiated, Settin
 # TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results, Settings['ValidationMethodRepeats'], Settings['PermutationSplitSize'])          
 
 # create new validation function
-def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results_validation, NPermutation, TestSize):
+def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results_validation, PredictedAgeDF_val, NPermutation, TestSize):
     NPermutation = NPermutation
     TestSize = TestSize
     KFoldSplits = NPermutation
@@ -216,7 +217,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
 
     if ValidationMethod == 'Permutation':
         print('Performing training set validation through permutation ')
-        rs = ShuffleSplit(n_splits=NPermutation, test_size=(TestSize), random_state=0)
+        rs = ShuffleSplit(n_splits=NPermutation, test_size=(TestSize), random_state=42)
         rs.get_n_splits(X_train_SC)
         for i, (train_index, test_index) in tqdm(enumerate(rs.split(X_train_SC))):
             # subset selected train and validation data
@@ -224,7 +225,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             X_validate_split_SC = X_train_SC[test_index]
             y_train_split = y_train[train_index]
             y_validate_split = y_train[test_index]
-            
+            ids = TrainingSet['participant_id'][test_index]
             
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
@@ -247,10 +248,20 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             RegCoef, RegIntercept = LinearAgeBias(y_pred_validate, y_validate_split)  # determine age bias
             RegCoef_concat.append(RegCoef)
             RegIntercept_concat.append(RegIntercept)
+
+            if i == 0:
+                y_val_pred_combined = y_pred_validate
+                y_val_split_combined =  y_validate_split
+                val_ids_combined = ids
+            else:
+                y_val_pred_combined = np.append(y_val_pred_combined,y_pred_validate)
+                y_val_split_combined = np.append(y_val_split_combined,y_validate_split)     
+                val_ids_combined = np.append(val_ids_combined,ids) 
+      
             
     elif ValidationMethod == 'Permutation' and 'Site' in TrainingSet.columns: # stratified shuffle-split
         print('Performing training set validation through permutation , including stratification for Site, Sex and Age')
-        rs = StratifiedShuffleSplit(n_splits=NPermutation, test_size=(TestSize), random_state=0)
+        rs = StratifiedShuffleSplit(n_splits=NPermutation, test_size=(TestSize), random_state=42)
         rs.get_n_splits(X_train_SC,y_stratify)
         for i, (train_index, test_index) in tqdm(enumerate(rs.split(X_train_SC, y_stratify))):
             # subset selected train and validation data
@@ -258,7 +269,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             X_validate_split_SC = X_train_SC[test_index]
             y_train_split = y_train[train_index]
             y_validate_split = y_train[test_index]
-            
+            ids = TrainingSet['participant_id'][test_index]
             
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
@@ -280,12 +291,21 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             
             RegCoef, RegIntercept = LinearAgeBias(y_pred_validate, y_validate_split)  # determine age bias
             RegCoef_concat.append(RegCoef)
-            RegIntercept_concat.append(RegIntercept)       
+            RegIntercept_concat.append(RegIntercept)     
             
+            if i == 0:
+                y_val_pred_combined = y_pred_validate
+                y_val_split_combined =  y_validate_split
+                val_ids_combined = ids
+            else:
+                y_val_pred_combined = np.append(y_val_pred_combined,y_pred_validate)
+                y_val_split_combined = np.append(y_val_split_combined,y_validate_split)     
+                val_ids_combined = np.append(val_ids_combined,ids) 
+      
             
     elif 'Site' in TrainingSet.columns: # stratified k-fold  
         print('Performing training set validation through stratified K-fold, including stratification for Site, Sex and Age')
-        skf = StratifiedKFold(n_splits=KFoldSplits)
+        skf = StratifiedKFold(n_splits=KFoldSplits, shuffle= True)
         skf.get_n_splits(X_train_SC, y_stratify)
         for i, (train_index, test_index) in enumerate(skf.split(X_train_SC, y_stratify)):
             # subset selected train and validation data
@@ -293,7 +313,7 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             X_validate_split_SC = X_train_SC[test_index]
             y_train_split = y_train[train_index]
             y_validate_split = y_train[test_index]
-            
+            ids = TrainingSet['participant_id'][test_index]
             
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
@@ -316,17 +336,27 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             RegCoef, RegIntercept = LinearAgeBias(y_pred_validate, y_validate_split)  # determine age bias
             RegCoef_concat.append(RegCoef)
             RegIntercept_concat.append(RegIntercept)
+            
+            if i == 0:
+                y_val_pred_combined = y_pred_validate
+                y_val_split_combined =  y_validate_split
+                val_ids_combined = ids
+            else:
+                y_val_pred_combined = np.append(y_val_pred_combined,y_pred_validate)
+                y_val_split_combined = np.append(y_val_split_combined,y_validate_split)     
+                val_ids_combined = np.append(val_ids_combined,ids) 
+
     else:
         print('Performing training set validation through K-fold, including stratification for Sex and Age')
         kf = KFold(n_splits=KFoldSplits)
-        kf.get_n_splits(X_train_SC)
-        for i, (train_index, test_index) in tqdm(enumerate(kf.split(X_train_SC))):
+        kf.get_n_splits(X_train_SC, y_stratify)
+        for i, (train_index, test_index) in tqdm(enumerate(kf.split(X_train_SC, y_stratify))):
             # subset selected train and validation data
             X_train_split_SC = X_train_SC[train_index]
             X_validate_split_SC = X_train_SC[test_index]
             y_train_split = y_train[train_index]
             y_validate_split = y_train[test_index]
-            
+            ids = TrainingSet['participant_id'][test_index]
             
             # add arguments for some algorithms
             if AlgorithmName not in Algorithm_Arguments.keys():
@@ -353,6 +383,15 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
             RegCoef, RegIntercept = LinearAgeBias(y_pred_validate, y_validate_split)  # determine age bias
             RegCoef_concat.append(RegCoef)
             RegIntercept_concat.append(RegIntercept)
+
+            if i == 0:
+                y_val_pred_combined = y_pred_validate
+                y_val_split_combined =  y_validate_split
+                val_ids_combined = ids
+            else:
+                y_val_pred_combined = np.append(y_val_pred_combined,y_pred_validate)
+                y_val_split_combined = np.append(y_val_split_combined,y_validate_split)     
+                val_ids_combined = np.append(val_ids_combined,ids) 
             
     Results_validation['Feature_combo'].append(FeatureSetName)
     Results_validation['No. features'].append(np.shape(X_train_SC)[1])
@@ -365,7 +404,11 @@ def TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algori
     RegCoef = np.average(RegCoef_concat)
     RegIntercept = np.average(RegIntercept_concat)
     
-    return Results_validation, RegCoef, RegIntercept
+    PredictedAgeDF_val[AlgorithmName] = y_val_pred_combined
+    PredictedAgeDF_val['Chronological_Age'] = y_val_split_combined
+    PredictedAgeDF_val['participant_id'] =  val_ids_combined
+    
+    return Results_validation, RegCoef, RegIntercept, PredictedAgeDF_val
 
 # %% Cerebrovascular brain-age prediction
 def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, TestingFeatureSetDataDir, Results, FeatureSetsList, SelectedAlgorithmsList, FeatureImportanceEstimationMethod, ValidationMethod, Settings):
@@ -459,7 +502,7 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                 ValidationSetCorrection = 1 # continue with validation steps
 
             elif ValidationSetExists == 0: # create validation dataset using permutation or (stratified) K-fold splitting
-                Results_val_append, RegCoef, RegIntercept = TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results, Settings['ValidationMethodRepeats'], Settings['PermutationSplitSize'])          
+                Results_val_append, RegCoef, RegIntercept, PredictedAgeDF_val = TrainingPerformanceEstimator(TrainingSet, X_train_SC, FeatureSetName, Algorithm, AlgorithmName, ValidationMethod, Results, PredictedAgeDF_val, Settings['ValidationMethodRepeats'], Settings['PermutationSplitSize'])          
                 Results_val['Feature_combo'].append(Results_val_append['Feature_combo']) 
                 Results_val['No. features'].append(Results_val_append['No. features'])
                 Results_val['Algorithm'].append(Results_val_append['Algorithm'])
@@ -501,10 +544,10 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
                         plt.close(fig)
                         
                         fig = plt.figure()
-                        shap.summary_plot(shap_values,X_train,show=False)
+                        shap.summary_plot(shap_values,X_train,show=False,max_display = X_train.shape[1])
                         fig.savefig(SHAPdotplot)
                         plt.close(fig)
-                
+                  
                 if ValidationSetCorrection == 1:
                    # test  corrected set
                    y_pred_test_cor = y_pred_test - (RegCoef * y_test + RegIntercept)
@@ -526,11 +569,21 @@ def CBA_prediction (TrainingFeatureSetDataDir, ValidationFeatureSetDataDir, Test
         if TestingSetExists == 1:
             PredictedAgeDF_test['Chronological_Age'] = y_test
             PredictedAgeDF_test['participant_id'] =  TestingSet['participant_id']
+            PredictedAgeDF_test['Site'] =  TestingSet['Site']
             if ValidationSetExists == 1:
                 PredictedAgeDF_val['Chronological_Age'] = y_val
                 PredictedAgeDF_test_cor['Chronological_Age'] = y_test
+                PredictedAgeDF_val['participant_id'] =  ValidationSet['participant_id']
+                PredictedAgeDF_val['Site'] =  ValidationSet['Site']
+                PredictedAgeDF_test_cor['participant_id'] =  TestingSet['participant_id']
+                PredictedAgeDF_test_cor['Site'] =  TestingSet['Site']
             elif ValidationSetCorrection == 1:
                 PredictedAgeDF_test_cor['Chronological_Age'] = y_test
+                PredictedAgeDF_test_cor['participant_id'] =  TestingSet['participant_id']
+                PredictedAgeDF_test_cor['Site'] =  TestingSet['Site']
+                PredictedAgeDF_val['Site'] =  TrainingSet['Site']
+
+
             
             TestFeatureSetPredictedAgePath = ResultsDataDir + FeatureSetName + '_PredictedAges_test.csv' # path for saving predicted ages
             PredictedAgeDF_test.to_csv(TestFeatureSetPredictedAgePath, index=False)
